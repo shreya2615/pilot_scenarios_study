@@ -29,7 +29,7 @@ function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 
 /* ---------- Content (edit as needed) ---------- */
 const CEO_SCENARIOS = [
-  {id:'CE_A',title:'CEO Scenario A',text:`Your firm is seeking a Chief Executive Officer to lead a large turnaround.`},
+  {id:'CEO_A',title:'CEO Scenario A',text:`Your firm is seeking a Chief Executive Officer to lead a large turnaround.`},
   {id:'CEO_B',title:'CEO Scenario B',text:`A successful tech company needs a new CEO to scale operations globally.`}
 ];
 const ECE_SCENARIOS = [
