@@ -13,8 +13,6 @@ function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+s
 const VARIANT = (simpleHash(PARTICIPANT_ID) % 3) + 1; // 1..3
 
 /* ---------- Config ---------- */
-// Change to true if you want to randomize the *display order* of candidates.
-// The candidate→face mapping stays stable either way.
 const RANDOMIZE_DISPLAY_ORDER = false;
 
 /* ---------- Paths ---------- */
@@ -61,7 +59,7 @@ const BIOS = {
 };
 
 /* ---------- Builder helpers ---------- */
-const DELIM = '::'; // safe separator for name keys
+const DELIM = '::';
 
 // Stable mapping helper: C1→1, C2→2, C3→3
 function faceIndexForCandidateId(candId){
@@ -69,8 +67,13 @@ function faceIndexForCandidateId(candId){
   return (isFinite(n) && n>=1 && n<=3) ? n : 1;
 }
 
+// Build Likert questions (we now only call with phaseType === 'face')
 function buildLikertQuestions(scenarioId, phaseType, gender){
-  let bios = BIOS[scenarioId].map(b => ({...b}));
+  const key = String(scenarioId || '').trim();
+  const src = BIOS[key];
+  if (!src) { throw new Error(`BIOS[${key}] is undefined.`); }
+
+  let bios = src.map(b => ({...b}));
   if (RANDOMIZE_DISPLAY_ORDER) bios = shuffle(bios);
 
   const scale = ["1","2","3","4","5","6","7"];
@@ -78,24 +81,17 @@ function buildLikertQuestions(scenarioId, phaseType, gender){
   const faceFiles = [];
 
   bios.forEach((cand)=>{
-    // Stable mapping: candidate ID determines face index
     const faceIdx = faceIndexForCandidateId(cand.id);
     const img = facePath(gender, faceIdx, VARIANT);
 
-    let prompt='';
-    if(phaseType==='bio'){
-      prompt = `<p><b>${cand.name}</b><br>${cand.bio}</p>
-                <p>How likely would you be to hire this candidate? (1=Not at all, 7=Extremely likely)</p>`;
-    } else {
-      faceFiles.push(img);
-      prompt = `<p><img src="${img}" alt="Candidate face" width="220"></p>
-                <p><b>${cand.name}</b><br>${cand.bio}</p>
-                <p>How likely would you be to hire this candidate? (1=Not at all, 7=Extremely likely)</p>`;
-    }
+    faceFiles.push(img);
+    const prompt = `<p><img src="${img}" alt="Candidate face" width="220"></p>
+                    <p><b>${cand.name}</b><br>${cand.bio}</p>
+                    <p>How likely would you be to hire this candidate? (1=Not at all, 7=Extremely likely)</p>`;
 
     questions.push({
       prompt,
-      name:`${scenarioId}${DELIM}${phaseType}${DELIM}${cand.id}`,
+      name:`${key}${DELIM}${phaseType}${DELIM}${cand.id}`,
       labels:scale,
       required:true
     });
@@ -115,37 +111,7 @@ function buildScenario(scenario){
     data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE'}
   };
 
-  const bioQ = buildLikertQuestions(scenario.id,'bio',gender);
   const faceQ = buildLikertQuestions(scenario.id,'face',gender);
-
-  const bioOnly = {
-    type: jsPsychSurveyLikert,
-    preamble:`<h3>${scenario.title} — Bio Only</h3><p>${scenario.text}</p>`,
-    questions:bioQ.questions,
-    button_label:'Continue',
-    data:{trial_type:'bio_only',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',variant:VARIANT,participant_id:PARTICIPANT_ID},
-    on_finish:(data)=>{
-      const resp = (data.response && typeof data.response === 'object')
-        ? data.response
-        : (data.responses ? JSON.parse(data.responses) : {});
-      const rows = [];
-      Object.keys(resp).forEach(k=>{
-        const rating = Number(resp[k]) + 1; // 0..6 -> 1..7
-        const [scenarioId, phase, candId] = k.split(DELIM);
-        rows.push({
-          participant_id: PARTICIPANT_ID,
-          scenario_id: scenarioId,
-          scenario_kind: isCEO ? 'CEO' : 'ECE',
-          phase: 'bio_only',
-          candidate_id: candId,
-          variant: VARIANT,
-          rating,
-          face_file: ''
-        });
-      });
-      data.row_expanded = rows;
-    }
-  };
 
   const withFaces = {
     type: jsPsychSurveyLikert,
@@ -178,11 +144,11 @@ function buildScenario(scenario){
     }
   };
 
-  return [preface, bioOnly, withFaces];
+  // Only preface + withFaces now
+  return [preface, withFaces];
 }
 
 /* ---------- Firebase Logging Setup ---------- */
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBJyjpK1xMQ-ecPUhutv3ulYNHwGY4yolg",
   authDomain: "pilot-scenarios-study.firebaseapp.com",
@@ -193,7 +159,6 @@ const firebaseConfig = {
   appId: "1:163355880471:web:cf065b691f494e482f4052",
   measurementId: "G-50KQJ9334C"
 };
-
 // Initialize Firebase (compat builds)
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -264,7 +229,7 @@ timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus:`<h2>Welcome</h2>
             <p>In this study, you will read job scenarios and rate candidates on a 1–7 scale.</p>
-            <p>You will complete two scenarios: one CEO and one ECE.</p>
+            <p>You will complete two scenarios (one CEO and one ECE). Each rating will be shown with the candidate's face.</p>
             <p>Press SPACE to begin.</p>`,
   choices:[' ']
 });
@@ -272,8 +237,7 @@ timeline.push({
 timeline.push({
   type:jsPsychInstructions,
   pages:[
-    `<h3>Instructions (1/2)</h3><p>For each scenario, rate three candidates on how likely you would be to hire them (1–7).</p>`,
-    `<h3>Instructions (2/2)</h3><p>You will first rate bios only, then the same candidates with faces shown.</p>`
+    `<h3>Instructions (1/1)</h3><p>For each scenario, you will rate three candidates on how likely you would be to hire them (1–7). Candidate bios and faces are shown together.</p>`
   ],
   show_clickable_nav:true
 });
@@ -291,7 +255,7 @@ SCENARIO_ORDER.forEach(scn=>{
 });
 timeline.push({ type: jsPsychPreload, images: preloadImages });
 
-// Build each scenario
+// Build each scenario (preface + withFaces only)
 SCENARIO_ORDER.forEach(scn => timeline.push(...buildScenario(scn)));
 
 timeline.push({
