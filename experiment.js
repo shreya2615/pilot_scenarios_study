@@ -41,6 +41,27 @@ function audioPath(gender, voiceIndex, variant){
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 
+/* ---------- COMPACT CSS (applies ONLY when body has .compact-trial) ---------- */
+(function injectCompactCssOnce(){
+  if (document.getElementById('compact-trial-css')) return;
+  const css = `
+    body.compact-trial .candidate-block p { margin: 6px 0; line-height: 1.28; }
+    body.compact-trial .candidate-block h3 { margin: 6px 0; line-height: 1.22; }
+    body.compact-trial .candidate-block img { max-width: 220px; height: auto; margin: 4px 0; }
+    body.compact-trial .candidate-block audio { width: 100%; max-width: 520px; margin: 4px 0; }
+
+    /* Tighten likert spacing ONLY during candidate trials */
+    body.compact-trial .jspsych-survey-likert-question { margin: 6px 0 !important; }
+    body.compact-trial .jspsych-survey-likert-statement { margin-bottom: 6px !important; }
+    body.compact-trial .jspsych-survey-likert-opts { margin: 4px 0 !important; }
+    body.compact-trial .jspsych-btn { margin-top: 8px !important; }
+  `;
+  const el = document.createElement('style');
+  el.id = 'compact-trial-css';
+  el.textContent = css;
+  document.head.appendChild(el);
+})();
+
 /* ---------- Content (edit as needed) ---------- */
 const CEO_SCENARIOS = [
   {id:'CEO_A',title:'NovaLink',text:`NovaLink is a Canadian tech firm, with a team of 5000 employees, that builds smart software to help companies manage their supply chains. We’ve grown across North America and are now preparing to expand into Europe. At the same time, we’re dealing with a hostile takeover attempt from a U.S. competitor. We want to remain independent and grow internationally, without losing our focus or team stability. We are looking for a new CEO to help navigate these challenges and opportunities.`},
@@ -105,37 +126,40 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
     if (modality === 'image') {
       const img = facePath(gender, idx, VARIANT);
-      stimHTML = `<p><img src="${img}" alt="Candidate face" width="220"></p>`;
+      stimHTML = `<img src="${img}" alt="Candidate face" style="display:block;margin:4px auto;max-width:220px;height:auto;">`;
       loggedFile = img;
       phase = 'bio_plus_face';
     } else {
       const aud = audioPath(gender, idx, VARIANT);
-      // controls + preload
-      stimHTML = `<p><audio src="${aud}" controls preload="auto"></audio></p>`;
+      stimHTML = `<audio src="${aud}" controls preload="auto" style="display:block;margin:4px auto;width:100%;max-width:520px;"></audio>`;
       loggedFile = aud;
       phase = 'bio_plus_audio';
     }
 
     const prompt = `
-      ${stimHTML}
-      <p><b>${cand.name}</b><br>${cand.bio}</p>
-      <p><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
+      <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
+        <h3 style="margin:6px 0;"><b>Scenario ${scenarioNumber}</b></h3>
+        <p style="margin:6px 0;">${scenario.text}</p>
+        <div>${stimHTML}</div>
+        <p style="margin:8px 0 6px 0;"><b>${cand.name}</b><br>${cand.bio}</p>
+        <p style="margin:6px 0;"><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
+      </div>
     `;
 
     return {
       type: jsPsychSurveyLikert,
-      // Header now says "Scenario X" and everything is centered
-      preamble: `<div style="text-align:center; max-width:900px; margin:0 auto;">
-                   <h3><b>Scenario ${scenarioNumber}</b></h3>
-                   <p>${scenario.text}</p>
-                 </div>`,
+      preamble: ``,
       questions: [{
-        prompt: `<div style="text-align:center; max-width:900px; margin:0 auto;">${prompt}</div>`,
+        prompt,
         name: `${scenario.id}${DELIM}${modality}${DELIM}${cand.id}`,
         labels: ["1","2","3","4","5","6","7"],
         required: true
       }],
       button_label: 'Continue',
+
+      /* Only candidate pages get compact layout */
+      on_start: () => { document.body.classList.add('compact-trial'); },
+
       data: {
         trial_type: phase,
         scenario_id: scenario.id,
@@ -147,6 +171,9 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         modality
       },
       on_finish: (data) => {
+        // Remove compact class so other pages stay unchanged
+        document.body.classList.remove('compact-trial');
+
         const resp = (data.response && typeof data.response === 'object')
           ? data.response
           : (data.responses ? JSON.parse(data.responses) : {});
@@ -169,7 +196,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  // Preface centered; scenario title bold
+  // Preface centered; scenario title bold (unchanged and not compact)
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
@@ -267,7 +294,7 @@ const jsPsych = initJsPsych({
 /* ---------- Timeline ---------- */
 const timeline=[];
 
-// Welcome screen centered; bold "Welcome to the experiment" + bold key info
+// Welcome screen centered; bold "Welcome to the experiment" + bold key info (unchanged)
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -281,7 +308,7 @@ timeline.push({
   choices:[' ']
 });
 
-// Instructions centered; bold important info
+// Instructions centered; bold important info (unchanged)
 timeline.push({
   type:jsPsychInstructions,
   pages:[
@@ -295,15 +322,13 @@ timeline.push({
   show_clickable_nav:true
 });
 
-// Build full set of 4 scenarios
+// Build full set of 4 scenarios (unchanged)
 const ALL_SCENARIOS = [
   ...CEO_SCENARIOS.map(s => ({...s, kind:'CEO'})),
   ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
 ];
 
-// Deterministic, balanced modality assignment across participants:
-//   hash % 2 === 0 → CEO_A: image, CEO_B: audio, ECE_A: image, ECE_B: audio
-//   hash % 2 === 1 → CEO_A: audio, CEO_B: image, ECE_A: audio, ECE_B: image
+// Deterministic, balanced modality assignment across participants (unchanged)
 const modFlip = simpleHash(PARTICIPANT_ID) % 2 === 1;
 const SCENARIO_MODALITY = {
   CEO_A: modFlip ? 'audio' : 'image',
@@ -312,10 +337,10 @@ const SCENARIO_MODALITY = {
   ECE_B: modFlip ? 'image' : 'audio'
 };
 
-// Randomize the order the 4 scenarios are presented
+// Randomize order (unchanged)
 const SCENARIO_ORDER = shuffle(ALL_SCENARIOS);
 
-// Preload stimuli for all 4 scenarios according to modality assignment
+// Preload stimuli (unchanged)
 const preloadImages = [];
 const preloadAudio = [];
 SCENARIO_ORDER.forEach(scn=>{
@@ -331,12 +356,13 @@ SCENARIO_ORDER.forEach(scn=>{
 });
 timeline.push({ type: jsPsychPreload, images: preloadImages, audio: preloadAudio });
 
-// Build each scenario into: centered preface + three per-candidate pages, labeled Scenario 1..4
+// Build scenarios (unchanged; only candidate pages get compact class)
 SCENARIO_ORDER.forEach((scn, idx) => {
   const modality = SCENARIO_MODALITY[scn.id];
   timeline.push(...buildCandidateTrials(scn, modality, idx + 1));
 });
 
+// End screen (unchanged)
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus:`<div style="text-align:center; max-width:900px; margin:48px auto;">
