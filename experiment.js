@@ -1,9 +1,19 @@
 /****************************************************
- * Pilot Scenarios Study (per-candidate pages)
+ * Pilot Scenarios Study (interleaved image + audio)
  * - Each candidate shown on its own page
- * - Variant (1..3) fixed per participant across all faces
- * - Candidate↔face index randomized per participant (1..3)
+ * - Variant (1..3) fixed per participant across ALL stimuli
+ * - Candidate↔stimulus index randomized per scenario (1..3)
+ * - Every participant sees all FOUR scenarios:
+ *      • One CEO + One ECE as IMAGES
+ *      • The other CEO + ECE as AUDIOS
+ * - Deterministic, participant-balanced modality assignment
  * - White background, black text
+ *
+ * NOTE on file names:
+ *   - Images expected at: assets/faces/<gender>/face01_var1.png (…02, …03)
+ *   - Audio  expected at: assets/audios/<gender>/voice01_var1.wav (…02, …03)
+ *     If your audio files use a different pattern (e.g., male_voice01_pitch1.wav),
+ *     just change the audioPath() function accordingly.
  ****************************************************/
 /* global firebase, jsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
 
@@ -14,12 +24,17 @@ function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+s
 const VARIANT = (simpleHash(PARTICIPANT_ID) % 3) + 1; // 1..3
 
 /* ---------- Config ---------- */
-const RANDOMIZE_DISPLAY_ORDER = true; // if true, randomize the order candidates are shown within a scenario
+const RANDOMIZE_DISPLAY_ORDER = true; // randomize candidate presentation order within each scenario
 
 /* ---------- Paths ---------- */
 function facePath(gender, faceIndex, variant){
   const faceNum = String(faceIndex).padStart(2,'0'); // 1..3 → 01..03
   return `assets/faces/${gender}/face${faceNum}_var${variant}.png`;
+}
+function audioPath(gender, voiceIndex, variant){
+  const voiceNum = String(voiceIndex).padStart(2,'0'); // 1..3 → 01..03
+  // Change the line below if your audio naming differs (e.g., male_voice01_pitch1.wav)
+  return `assets/audios/${gender}/voice${voiceNum}_var${variant}.wav`;
 }
 
 /* ---------- Utils ---------- */
@@ -38,13 +53,13 @@ const ECE_SCENARIOS = [
 
 const BIOS = {
   CEO_A:[
-    {id:'C1',name:'Richard',bio:'In my last role, I oversaw expansion of the company into Germany and the Netherlands.I speak German and have a network of contacts in both countries. Shortly after initiating the expansion, we were confronted by an aggressive takeover attempt. I worked directly with the board and our lawyers, investors, and regulators to fend off the aggression and safeguard shareholder value, while also keeping focus on our long-term corporate goals. I keep people calm and grounded when things heat up.'},
+    {id:'C1',name:'Richard',bio:'In my last role, I oversaw expansion of the company into Germany and the Netherlands. I speak German and have a network of contacts in both countries. Shortly after initiating the expansion, we were confronted by an aggressive takeover attempt. I worked directly with the board and our lawyers, investors, and regulators to fend off the aggression and safeguard shareholder value, while also keeping focus on our long-term corporate goals. I keep people calm and grounded when things heat up.'},
     {id:'C2',name:'Scott',bio:'I have successfully led the launch of software technology products in Europe as the vice president of a multinational company. I also helped set up our first offices and client networks in both Germany and Spain. I am fully conversant in German and French, and I know how to effectively navigate cultural and regulatory differences in various contexts. I’m excited about helping companies grow across borders and I like being the person who connects the dots between people and markets.'},
     {id:'C3',name:'John',bio:'I have successfully led corporate organizations through intense and challenging internal changes, including board turnover and investor turmoil, while helping the company maintain steady focus and consistently grow profits over time. I have also worked very closely with legal teams on contract disputes, negotiations, and restructuring plans. What I bring to the table is the ability to keep a company calm, collected, and focused while things shift around them.'}
   ],
   CEO_B:[
-    {id:'C1',name:'Thomas',bio:'As vice president of a multinational green tech company, I led system updates in Germany and France to help clients comply with new EU climate regulations. Around the same time, COVID restrictions forced a shift to remote work, which caused isolation, low morale, and a loss of shared purpose. I implemented several initiatives to address these challenges, resulting in an 67% increase in retention and a 73% boost in job satisfaction over the next three years. To me, leadership means being steady, compassionate, empathetic, and mission-focused. I still bike to work and strive to live by the values we promote.'},
-    {id:'C2',name:'James',bio:'I was appointed VP head of human resources while my current company was struggling with low morale and employee retention. My approach was to empathize and view the situation from the employee’s perspective. I initiated steps to make the employees feel heard at every level.  This led to the opening of corporate daycare facilities and encouraging flexible hours. We also initiated regular company retreats to reinforce team cohesion. After three years our employee retention rate is 95% and corporate morale at an all-time high. I believe engaged, motivated employees are essential to long-term success and overall profitability.'},
+    {id:'C1',name:'Thomas',bio:'As vice president of a multinational green tech company, I led system updates in Germany and France to help clients comply with new EU climate regulations. Around the same time, COVID restrictions forced a shift to remote work, which caused isolation, low morale, and a loss of shared purpose. I implemented several initiatives to address these challenges, resulting in a 67% increase in retention and a 73% boost in job satisfaction over the next three years. To me, leadership means being steady, compassionate, empathetic, and mission-focused. I still bike to work and strive to live by the values we promote.'},
+    {id:'C2',name:'James',bio:'I was appointed VP head of human resources while my current company was struggling with low morale and employee retention. My approach was to empathize and view the situation from the employee’s perspective. I initiated steps to make the employees feel heard at every level. This led to the opening of corporate daycare facilities and encouraging flexible hours. We also initiated regular company retreats to reinforce team cohesion. After three years our employee retention rate is 95% and corporate morale at an all-time high. I believe engaged, motivated employees are essential to long-term success and overall profitability.'},
     {id:'C3',name:'Brian',bio:'I have held leadership positions at the vice president level in both marketing and finance across several well-established multinational corporations. In my marketing role, we successfully increased U.S. market share by 12% over a two-year period under my direct leadership. In the finance position, I implemented strategic measures to reduce company debt and boost shareholder equity, which ultimately resulted in a 54% increase in our stock value. I consider myself a well-rounded, seasoned corporate executive with a strong track record of results who can position your organization for sustained growth and long-term profitability.'}
   ],
   ECE_A:[
@@ -53,8 +68,8 @@ const BIOS = {
     {id:'C3',name:'Rebecca',bio:'I have three years of experience working as an educator at a learning centre in downtown Toronto. In that role, I guided children through daily activities to support their learning and development. I worked closely with children to build routines that encouraged engagement and confidence. For instance, I regularly led circle time activities, prompting children to participate in games and sing-alongs. Outside of work, I coach a youth soccer team and have received recognition for leading the most improved team.'}
   ],
   ECE_B:[
-    {id:'C1',name:'Maya',bio:'For the past three years, I have worked at a preschool supporting a program focusing on  children’s developmental milestones. I value the importance of clear communication, and I like to host a monthly ‘family morning’ where parents and children can join in on a circle time activity and parents chat informally about their child’s progress. Outside of work, I regularly take professional development courses that I can apply to my own role, as I strongly believe in the value of evidence based educational strategies.'},
-    {id:'C2',name:'Naomi',bio:'I have four years of experience working as a classroom assistant, helping implement learning activities and supporting daily routines. I make the effort to speak with parents informally during drop-off and pickup, and I appreciate how these interactions can help build trust overtime. I’ve also volunteered at local community events, allowing me to collaborate with different age groups and support environments that bring people together. These are values I hope to bring into my work with children and their families.'},
+    {id:'C1',name:'Maya',bio:'For the past three years, I have worked at a preschool supporting a program focusing on children’s developmental milestones. I value the importance of clear communication, and I like to host a monthly ‘family morning’ where parents and children can join in on a circle time activity and parents chat informally about their child’s progress. Outside of work, I regularly take professional development courses that I can apply to my own role, as I strongly believe in the value of evidence-based educational strategies.'},
+    {id:'C2',name:'Naomi',bio:'I have four years of experience working as a classroom assistant, helping implement learning activities and supporting daily routines. I make the effort to speak with parents informally during drop-off and pickup, and I appreciate how these interactions can help build trust over time. I’ve also volunteered at local community events, allowing me to collaborate with different age groups and support environments that bring people together. These are values I hope to bring into my work with children and their families.'},
     {id:'C3',name:'Julia',bio:'I spent the past two years working in toddler and preschool classrooms. In these roles, my main focus was helping to plan activities and maintain structured routines for the lead educators to follow. As an activity planner, I communicated effectively with lead educators to develop cohesive daily routines and have maintained contact with many of them even after my contract ended. I highly value continual growth and am always researching new activities that maximize children’s learning and healthy development.'}
   ]
 };
@@ -62,62 +77,74 @@ const BIOS = {
 /* ---------- Builder helpers ---------- */
 const DELIM = '::';
 
-// Create a randomized mapping from candidate IDs to face indices [1,2,3] per scenario
-function assignFacesToCandidates(candidates) {
-  const faceIndices = shuffle([1,2,3]); // random permutation
+// Random 1..3 assignment per scenario (candidate → stimulus index)
+function assignIndicesToCandidates(candidates) {
+  const indices = shuffle([1,2,3]);
   const mapping = {};
-  candidates.forEach((cand, i) => { mapping[cand.id] = faceIndices[i]; });
+  candidates.forEach((cand, i) => { mapping[cand.id] = indices[i]; });
   return mapping;
 }
 
-// Build per-candidate trials (one page per candidate)
-// phaseType is 'face' (we only run the full experiment phase)
-function buildCandidateTrials(scenario) {
+// Build per-candidate trials (one page per candidate) for a given MODALITY: 'image' | 'audio'
+function buildCandidateTrials(scenario, modality) {
   const isCEO = scenario.id.startsWith('CEO');
   const gender = isCEO ? 'male' : 'female';
 
-  // Copy bios
   let bios = BIOS[scenario.id].map(b => ({...b}));
-  // Randomize display order if desired (candidate presentation order)
   if (RANDOMIZE_DISPLAY_ORDER) bios = shuffle(bios);
 
-  // Random face assignment per participant for this scenario
-  const candToFaceIdx = assignFacesToCandidates(bios);
+  const candToIdx = assignIndicesToCandidates(bios);
 
-  // Build three separate trials (one per candidate)
   const trials = bios.map((cand) => {
-    const faceIdx = candToFaceIdx[cand.id];
-    const img = facePath(gender, faceIdx, VARIANT);
+    const idx = candToIdx[cand.id];
+
+    let stimHTML = '';
+    let loggedFile = '';
+    let phase = '';
+
+    if (modality === 'image') {
+      const img = facePath(gender, idx, VARIANT);
+      stimHTML = `<p><img src="${img}" alt="Candidate face" width="220"></p>`;
+      loggedFile = img;
+      phase = 'bio_plus_face';
+    } else {
+      const aud = audioPath(gender, idx, VARIANT);
+      // controls + preload
+      stimHTML = `<p><audio src="${aud}" controls preload="auto"></audio></p>`;
+      loggedFile = aud;
+      phase = 'bio_plus_audio';
+    }
+
+    const prompt = `
+      ${stimHTML}
+      <p><b>${cand.name}</b><br>${cand.bio}</p>
+      <p>How likely would you be to hire this candidate? (1=Not at all, 7=Extremely likely)</p>
+    `;
 
     return {
       type: jsPsychSurveyLikert,
-      preamble: `<h3>${scenario.title} — Bio + Face</h3><p>${scenario.text}</p>`,
+      preamble: `<h3>${scenario.title} — ${modality === 'image' ? 'Bio + Face' : 'Bio + Audio'}</h3><p>${scenario.text}</p>`,
       questions: [{
-        prompt: `
-          <p><img src="${img}" alt="Candidate face" width="220"></p>
-          <p><b>${cand.name}</b><br>${cand.bio}</p>
-          <p>How likely would you be to hire this candidate? (1=Not at all, 7=Extremely likely)</p>
-        `,
-        name: `${scenario.id}${DELIM}face${DELIM}${cand.id}`,
+        prompt,
+        name: `${scenario.id}${DELIM}${modality}${DELIM}${cand.id}`,
         labels: ["1","2","3","4","5","6","7"],
         required: true
       }],
       button_label: 'Continue',
       data: {
-        trial_type: 'bio_plus_face',
+        trial_type: phase,
         scenario_id: scenario.id,
         scenario_kind: isCEO ? 'CEO' : 'ECE',
         variant: VARIANT,
         participant_id: PARTICIPANT_ID,
         candidate_id: cand.id,
-        face_file: img
+        stimulus_file: loggedFile,
+        modality
       },
       on_finish: (data) => {
-        // Normalize response
         const resp = (data.response && typeof data.response === 'object')
           ? data.response
           : (data.responses ? JSON.parse(data.responses) : {});
-        // There is one question, pull its key/value
         const key = Object.keys(resp)[0];
         const rating = Number(resp[key]) + 1; // 0..6 -> 1..7
 
@@ -125,22 +152,23 @@ function buildCandidateTrials(scenario) {
           participant_id: PARTICIPANT_ID,
           scenario_id: scenario.id,
           scenario_kind: isCEO ? 'CEO' : 'ECE',
-          phase: 'bio_plus_face',
+          phase,
           candidate_id: cand.id,
           variant: VARIANT,
           rating,
-          face_file: img
+          face_file: (modality === 'image') ? loggedFile : '',
+          audio_file: (modality === 'audio') ? loggedFile : '',
+          modality
         }];
       }
     };
   });
 
-  // Return with a preface first, then the three candidate pages
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `<h3>${scenario.title}</h3><p>${scenario.text}</p><p>Press SPACE to continue.</p>`,
     choices: [' '],
-    data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE'}
+    data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
   };
 
   return [preface, ...trials];
@@ -198,7 +226,9 @@ const jsPsych = initJsPsych({
             candidate_id: r.candidate_id,
             variant: r.variant,
             rating: r.rating,
-            face_file: r.face_file,
+            face_file: r.face_file || '',
+            audio_file: r.audio_file || '',
+            modality: r.modality || '',
             timestamp: new Date().toISOString()
           };
         });
@@ -225,37 +255,66 @@ const timeline=[];
 
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
-  stimulus:`<h2>Welcome</h2>
-            <p>In this study, you will read job scenarios and rate candidates on a 1–7 scale.</p>
-            <p>You will complete two scenarios (one CEO and one ECE). Each candidate will appear on a separate page with their face and bio.</p>
-            <p>Press SPACE to begin.</p>`,
+  stimulus: `
+    <h2>Welcome</h2>
+    <p>In this study, you will read job scenarios and rate candidates on a 1–7 scale.</p>
+    <p>You will complete four scenarios (two CEO and two ECE). For each scenario, each candidate appears on a separate page with their bio and either a face image or an audio recording.</p>
+    <p>Press SPACE to begin.</p>
+  `,
   choices:[' ']
 });
 
 timeline.push({
   type:jsPsychInstructions,
   pages:[
-    `<h3>Instructions</h3><p>For each scenario, you will rate three candidates on how likely you would be to hire them (1–7). Each candidate is shown on its own page with the bio and face together.</p>`
+    `<h3>Instructions</h3>
+     <p>For each scenario, rate three candidates on how likely you would be to hire them (1–7).</p>
+     <p>Some scenarios present faces, others present audio voices. Please consider the info provided with each candidate and respond honestly.</p>`
   ],
   show_clickable_nav:true
 });
 
-// Choose 1 CEO + 1 ECE in random order
-const chosenCEO = sampleOne(CEO_SCENARIOS);
-const chosenECE = sampleOne(ECE_SCENARIOS);
-const SCENARIO_ORDER = shuffle([chosenCEO, chosenECE]);
+// Build full set of 4 scenarios
+const ALL_SCENARIOS = [
+  ...CEO_SCENARIOS.map(s => ({...s, kind:'CEO'})),
+  ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
+];
 
-// Preload 3 faces per scenario (variant fixed per participant)
-// (We don't know the random mapping yet, but preloading all 3 per scenario is sufficient.)
+// Deterministic, balanced modality assignment across participants:
+//   hash % 2 === 0 → CEO_A: image, CEO_B: audio, ECE_A: image, ECE_B: audio
+//   hash % 2 === 1 → CEO_A: audio, CEO_B: image, ECE_A: audio, ECE_B: image
+const modFlip = simpleHash(PARTICIPANT_ID) % 2 === 1;
+const SCENARIO_MODALITY = {
+  CEO_A: modFlip ? 'audio' : 'image',
+  CEO_B: modFlip ? 'image' : 'audio',
+  ECE_A: modFlip ? 'audio' : 'image',
+  ECE_B: modFlip ? 'image' : 'audio'
+};
+
+// Randomize the order the 4 scenarios are presented
+const SCENARIO_ORDER = shuffle(ALL_SCENARIOS);
+
+// Preload stimuli for all 4 scenarios according to modality assignment
 const preloadImages = [];
+const preloadAudio = [];
 SCENARIO_ORDER.forEach(scn=>{
-  const gender = scn.id.startsWith('CEO') ? 'male' : 'female';
-  for(let i=1;i<=3;i++){ preloadImages.push(facePath(gender,i,VARIANT)); }
+  const gender = scn.kind === 'CEO' ? 'male' : 'female';
+  const modality = SCENARIO_MODALITY[scn.id];
+  for(let i=1;i<=3;i++){
+    if (modality === 'image') {
+      preloadImages.push(facePath(gender,i,VARIANT));
+    } else {
+      preloadAudio.push(audioPath(gender,i,VARIANT));
+    }
+  }
 });
-timeline.push({ type: jsPsychPreload, images: preloadImages });
+timeline.push({ type: jsPsychPreload, images: preloadImages, audio: preloadAudio });
 
-// Build each scenario into: preface + three per-candidate pages
-SCENARIO_ORDER.forEach(scn => timeline.push(...buildCandidateTrials(scn)));
+// Build each scenario into: preface + three per-candidate pages, per assigned modality
+SCENARIO_ORDER.forEach(scn => {
+  const modality = SCENARIO_MODALITY[scn.id];
+  timeline.push(...buildCandidateTrials(scn, modality));
+});
 
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
