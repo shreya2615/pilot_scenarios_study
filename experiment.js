@@ -1,11 +1,19 @@
 /****************************************************
  * Pilot Scenarios Study (interleaved image + audio)
- * PRESENTATION TWEAKS ONLY (NO-SCROLL candidate pages):
- * - Candidate pages: tighter vertical spacing so Likert + Next are visible without scrolling
- * - Minor margin reductions, compact Likert, smaller gap above Continue button
- * - Light stimulus size cap to keep whole page on-screen
+ * PRESENTATION TWEAKS ONLY:
+ * - Centered welcome + instructions; bold key lines
+ * - Preface (scenario-only) centered; bold scenario title
+ * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
  *
- * Everything else unchanged from your last version.
+ * CORE LOGIC UNCHANGED:
+ * - Each candidate shown on its own page
+ * - Variant (1..3) fixed per participant across ALL stimuli
+ * - Candidate↔stimulus index randomized per scenario (1..3)
+ * - Every participant sees all FOUR scenarios:
+ *      • One CEO + One ECE as IMAGES
+ *      • The other CEO + ECE as AUDIOS
+ * - Deterministic, participant-balanced modality assignment
+ * - White background, black text
  ****************************************************/
 /* global firebase, jsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
 
@@ -32,39 +40,6 @@ function audioPath(gender, voiceIndex, variant){
 /* ---------- Utils ---------- */
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
-
-/* ---------- Global compact styles (to eliminate scrolling on candidate pages) ---------- */
-(function injectCompactStyles(){
-  const css = `
-    body { background:white; color:black; font-family:Arial, sans-serif; }
-    .jspsych-content { max-width: 900px; }
-
-    /* Compact default text spacing slightly */
-    .jspsych-content p { margin: 6px 0 8px 0; line-height: 1.25; }
-    .jspsych-content h2, .jspsych-content h3 { margin: 8px 0; line-height: 1.2; }
-
-    /* Candidate page: compress likert and button spacing */
-    .jspsych-survey-likert .jspsych-survey-likert-statement { margin-bottom: 4px !important; }
-    .jspsych-survey-likert .jspsych-survey-likert-opts { margin: 4px 0 0 0 !important; }
-    .jspsych-survey-likert .jspsych-btn { margin-top: 8px !important; }
-
-    /* Older/newer plugin selector fallbacks to be safe across jsPsych builds */
-    .jspsych-survey-likert-question { margin: 6px 0 !important; }
-    .jspsych-survey-likert-opts ul,
-    .jspsych-survey-likert-options { margin: 4px 0 !important; }
-    .jspsych-survey-likert-option { margin: 0 6px !important; }
-
-    /* Keep stimuli compact */
-    img { max-width: 200px; height: auto; }
-    audio { width: 100%; max-width: 480px; }
-
-    /* Tighten container padding on survey-likert to avoid extra whitespace */
-    .jspsych-display-element { padding-top: 8px; }
-  `;
-  const el = document.createElement('style');
-  el.textContent = css;
-  document.head.appendChild(el);
-})();
 
 /* ---------- Content (edit as needed) ---------- */
 const CEO_SCENARIOS = [
@@ -130,32 +105,32 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
     if (modality === 'image') {
       const img = facePath(gender, idx, VARIANT);
-      stimHTML = `<div><img src="${img}" alt="Candidate face"></div>`;
+      stimHTML = `<p><img src="${img}" alt="Candidate face" width="220"></p>`;
       loggedFile = img;
       phase = 'bio_plus_face';
     } else {
       const aud = audioPath(gender, idx, VARIANT);
       // controls + preload
-      stimHTML = `<div><audio src="${aud}" controls preload="auto"></audio></div>`;
+      stimHTML = `<p><audio src="${aud}" controls preload="auto"></audio></p>`;
       loggedFile = aud;
       phase = 'bio_plus_audio';
     }
 
     const prompt = `
-      <div style="text-align:left; max-width:900px; margin:0 auto;">
-        <h3 style="margin:6px 0;"><b>Scenario ${scenarioNumber}</b></h3>
-        <p style="margin:6px 0 8px 0;">${scenario.text}</p>
-        ${stimHTML}
-        <p style="margin:10px 0 4px 0;"><b>${cand.name}</b><br>${cand.bio}</p>
-        <p style="margin:6px 0 4px 0;"><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
-      </div>
+      ${stimHTML}
+      <p><b>${cand.name}</b><br>${cand.bio}</p>
+      <p><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
     `;
 
     return {
       type: jsPsychSurveyLikert,
-      preamble: ``,
+      // Header now says "Scenario X" and everything is centered
+      preamble: `<div style="text-align:center; max-width:900px; margin:0 auto;">
+                   <h3><b>Scenario ${scenarioNumber}</b></h3>
+                   <p>${scenario.text}</p>
+                 </div>`,
       questions: [{
-        prompt: `<div style="max-width:900px; margin:0 auto;">${prompt}</div>`,
+        prompt: `<div style="text-align:center; max-width:900px; margin:0 auto;">${prompt}</div>`,
         name: `${scenario.id}${DELIM}${modality}${DELIM}${cand.id}`,
         labels: ["1","2","3","4","5","6","7"],
         required: true
@@ -194,10 +169,10 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  // Preface (scenario-only) centered; scenario title bold
+  // Preface centered; scenario title bold
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
-    stimulus: `<div style="text-align:center; max-width:900px; margin:48px auto;">
+    stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
                  <h3><b>${scenario.title}</b></h3>
                  <p>${scenario.text}</p>
                  <p>Press <b>SPACE</b> to continue.</p>
