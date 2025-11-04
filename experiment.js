@@ -5,14 +5,18 @@
  * - Preface (scenario-only) centered; bold scenario title
  * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
  *
- * CORE LOGIC UNCHANGED:
+ * CORE LOGIC:
  * - Each candidate shown on its own page
  * - Variant (1..3) fixed per participant across ALL stimuli
- * - Candidate↔stimulus index randomized per scenario (1..3)
+ * - Images: candidate↔face index randomized per scenario (1..3)
+ * - Audio: FIXED mapping by scenario + candidate:
+ *      A-scenarios → voices 1..3 (C1→1, C2→2, C3→3)
+ *      B-scenarios → voices 4..6 (C1→4, C2→5, C3→6)
  * - Every participant sees all FOUR scenarios:
  *      • One CEO + One ECE as IMAGES
  *      • The other CEO + ECE as AUDIOS
  * - Deterministic, participant-balanced modality assignment
+ * - Optional audio gating (must play full / min seconds / free)
  * - White background, black text
  ****************************************************/
 /* global firebase, jsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
@@ -26,14 +30,21 @@ const VARIANT = (simpleHash(PARTICIPANT_ID) % 3) + 1; // 1..3
 /* ---------- Config ---------- */
 const RANDOMIZE_DISPLAY_ORDER = true; // randomize candidate presentation order within each scenario
 
+/* ---------- Audio presentation policy ---------- */
+const AUDIO_PRESENTATION = {
+  mode: 'must_play_full',  // 'must_play_full' | 'min_seconds' | 'free'
+  minSeconds: 6,           // used when mode === 'min_seconds'
+  blockSeeking: true,      // prevent skipping ahead
+  showGateHint: true       // show a short hint until unlocked
+};
+
 /* ---------- Paths ---------- */
 function facePath(gender, faceIndex, variant){
   const faceNum = String(faceIndex).padStart(2,'0'); // 1..3 → 01..03
   return `assets/faces/${gender}/face${faceNum}_var${variant}.png`;
 }
 function audioPath(gender, voiceIndex, variant){
-  const voiceNum = String(voiceIndex).padStart(2,'0'); // 1..3 → 01..03
-  // Change if your audio naming differs (e.g., ${gender}_voice${voiceNum}_pitch${variant}.wav)
+  const voiceNum = String(voiceIndex).padStart(2,'0'); // 1..6 → 01..06
   return `assets/audios/${gender}/voice${voiceNum}_var${variant}.wav`;
 }
 
@@ -98,7 +109,7 @@ const BIOS = {
 /* ---------- Builder helpers ---------- */
 const DELIM = '::';
 
-// Random 1..3 assignment per scenario (candidate → stimulus index)
+// Image index assignment per scenario (candidate → 1..3), randomized
 function assignIndicesToCandidates(candidates) {
   const indices = shuffle([1,2,3]);
   const mapping = {};
@@ -106,8 +117,16 @@ function assignIndicesToCandidates(candidates) {
   return mapping;
 }
 
+// Audio index mapping fixed by scenario + candidate id
+function audioIndexFor(scenarioId, candId){
+  const isA = /_A$/.test(scenarioId); // true for CEO_A, ECE_A
+  const base = isA ? 1 : 4;           // A→1..3, B→4..6
+  const n = parseInt(String(candId).replace(/\D/g,''), 10); // C1→1, C2→2, C3→3
+  return base + (n - 1);
+}
+
 // Build per-candidate trials (one page per candidate) for a given MODALITY: 'image' | 'audio'
-// Added scenarioNumber to label pages as "Scenario 1..4"
+// scenarioNumber labels pages as "Scenario 1..4"
 function buildCandidateTrials(scenario, modality, scenarioNumber) {
   const isCEO = scenario.id.startsWith('CEO');
   const gender = isCEO ? 'male' : 'female';
@@ -115,10 +134,16 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
   let bios = BIOS[scenario.id].map(b => ({...b}));
   if (RANDOMIZE_DISPLAY_ORDER) bios = shuffle(bios);
 
-  const candToIdx = assignIndicesToCandidates(bios);
+  // mapping used only for IMAGES
+  const candToIdxImage = assignIndicesToCandidates(bios);
 
   const trials = bios.map((cand) => {
-    const idx = candToIdx[cand.id];
+    const idx = (modality === 'image')
+      ? candToIdxImage[cand.id]                   // randomized 1..3
+      : audioIndexFor(scenario.id, cand.id);      // fixed 1..3 or 4..6
+
+    // unique id for audio DOM hooks (for gating)
+    const audioId = `aud_${scenario.id}_${cand.id}_${Date.now()}_${Math.floor(Math.random()*1e6)}`;
 
     let stimHTML = '';
     let loggedFile = '';
@@ -131,10 +156,17 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
       phase = 'bio_plus_face';
     } else {
       const aud = audioPath(gender, idx, VARIANT);
-      stimHTML = `<audio src="${aud}" controls preload="auto" style="display:block;margin:4px auto;width:100%;max-width:520px;"></audio>`;
+      const controlsList = `controlsList="nodownload noplaybackrate"`;
+      stimHTML = `<audio id="${audioId}" src="${aud}" controls preload="auto" ${controlsList} style="display:block;margin:4px auto;width:100%;max-width:520px;"></audio>`;
       loggedFile = aud;
       phase = 'bio_plus_audio';
     }
+
+    const gateHint = (modality === 'audio' && AUDIO_PRESENTATION.showGateHint && AUDIO_PRESENTATION.mode !== 'free')
+      ? `<p id="${audioId}_hint" style="margin:6px 0; font-size:0.95rem; opacity:0.8;">
+           Please listen to the audio ${AUDIO_PRESENTATION.mode==='min_seconds' ? `for at least ${AUDIO_PRESENTATION.minSeconds} seconds` : 'until it finishes'} to enable the rating.
+         </p>`
+      : ``;
 
     const prompt = `
       <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
@@ -143,6 +175,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         <div>${stimHTML}</div>
         <p style="margin:8px 0 6px 0;"><b>${cand.name}</b><br>${cand.bio}</p>
         <p style="margin:6px 0;"><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
+        ${gateHint}
       </div>
     `;
 
@@ -159,6 +192,56 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
       /* Only candidate pages get compact layout */
       on_start: () => { document.body.classList.add('compact-trial'); },
+
+      /* Gate audio playback if configured */
+      on_load: () => {
+        if (modality !== 'audio') return;
+        if (AUDIO_PRESENTATION.mode === 'free') return;
+
+        const audioEl = document.getElementById(audioId);
+        const btn = document.querySelector('.jspsych-btn');
+        const opts = document.querySelector('.jspsych-survey-likert-opts');
+        if (!audioEl || !btn || !opts) return;
+
+        const lockUI = () => {
+          btn.disabled = true; btn.style.opacity = 0.5;
+          opts.style.pointerEvents = 'none'; opts.style.opacity = 0.6;
+        };
+        const unlockUI = () => {
+          btn.disabled = false; btn.style.opacity = 1;
+          opts.style.pointerEvents = 'auto'; opts.style.opacity = 1;
+          const hint = document.getElementById(`${audioId}_hint`);
+          if (hint) hint.style.display = 'none';
+        };
+
+        lockUI();
+
+        // Block seeking ahead (optional)
+        let maxListened = 0;
+        if (AUDIO_PRESENTATION.blockSeeking) {
+          audioEl.addEventListener('timeupdate', () => {
+            if (audioEl.currentTime > maxListened) maxListened = audioEl.currentTime;
+          });
+          audioEl.addEventListener('seeking', () => {
+            const allowed = Math.max(maxListened + 0.25, 0);
+            if (audioEl.currentTime > allowed) audioEl.currentTime = allowed;
+          });
+        }
+
+        // Unlock criteria
+        if (AUDIO_PRESENTATION.mode === 'must_play_full') {
+          audioEl.addEventListener('ended', unlockUI, { once: true });
+        } else if (AUDIO_PRESENTATION.mode === 'min_seconds') {
+          const need = Math.max(0, Number(AUDIO_PRESENTATION.minSeconds) || 0);
+          const onTU = () => {
+            if (audioEl.currentTime >= need) {
+              audioEl.removeEventListener('timeupdate', onTU);
+              unlockUI();
+            }
+          };
+          audioEl.addEventListener('timeupdate', onTU);
+        }
+      },
 
       data: {
         trial_type: phase,
@@ -294,7 +377,7 @@ const jsPsych = initJsPsych({
 /* ---------- Timeline ---------- */
 const timeline=[];
 
-// Welcome screen centered; bold "Welcome to the experiment" + bold key info (unchanged)
+// Welcome screen
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -310,7 +393,7 @@ timeline.push({
   choices:[' ']
 });
 
-// Instructions centered; bold important info (unchanged)
+// Instructions
 timeline.push({
   type:jsPsychInstructions,
   pages:[
@@ -327,13 +410,13 @@ timeline.push({
   show_clickable_nav:true
 });
 
-// Build full set of 4 scenarios (unchanged)
+// All scenarios
 const ALL_SCENARIOS = [
   ...CEO_SCENARIOS.map(s => ({...s, kind:'CEO'})),
   ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
 ];
 
-// Deterministic, balanced modality assignment across participants (unchanged)
+// Balanced modality assignment
 const modFlip = simpleHash(PARTICIPANT_ID) % 2 === 1;
 const SCENARIO_MODALITY = {
   CEO_A: modFlip ? 'audio' : 'image',
@@ -342,32 +425,34 @@ const SCENARIO_MODALITY = {
   ECE_B: modFlip ? 'image' : 'audio'
 };
 
-// Randomize order (unchanged)
+// Random order of the 4 scenarios
 const SCENARIO_ORDER = shuffle(ALL_SCENARIOS);
 
-// Preload stimuli (unchanged)
+// Preload: images use 1..3; audio uses 1..3 for A, 4..6 for B
 const preloadImages = [];
 const preloadAudio = [];
 SCENARIO_ORDER.forEach(scn=>{
   const gender = scn.kind === 'CEO' ? 'male' : 'female';
   const modality = SCENARIO_MODALITY[scn.id];
-  for(let i=1;i<=3;i++){
-    if (modality === 'image') {
-      preloadImages.push(facePath(gender,i,VARIANT));
-    } else {
-      preloadAudio.push(audioPath(gender,i,VARIANT));
-    }
+  if (modality === 'image') {
+    // faces 1..3 (variant fixed)
+    for(let i=1;i<=3;i++){ preloadImages.push(facePath(gender,i,VARIANT)); }
+  } else {
+    const isA = /_A$/.test(scn.id);
+    const start = isA ? 1 : 4;
+    const end = isA ? 3 : 6;
+    for(let v=start; v<=end; v++){ preloadAudio.push(audioPath(gender,v,VARIANT)); }
   }
 });
 timeline.push({ type: jsPsychPreload, images: preloadImages, audio: preloadAudio });
 
-// Build scenarios (unchanged; only candidate pages get compact class)
+// Build scenarios (candidate pages are compact; order randomized; audio mapping fixed)
 SCENARIO_ORDER.forEach((scn, idx) => {
   const modality = SCENARIO_MODALITY[scn.id];
   timeline.push(...buildCandidateTrials(scn, modality, idx + 1));
 });
 
-// End screen (unchanged)
+// End screen
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus:`<div style="text-align:center; max-width:900px; margin:48px auto;">
