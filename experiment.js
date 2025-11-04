@@ -1,5 +1,11 @@
 /****************************************************
  * Pilot Scenarios Study (interleaved image + audio)
+ * PRESENTATION TWEAKS ONLY:
+ * - Centered welcome + instructions; bold key lines
+ * - Preface (scenario-only) centered; bold scenario title
+ * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
+ *
+ * CORE LOGIC UNCHANGED:
  * - Each candidate shown on its own page
  * - Variant (1..3) fixed per participant across ALL stimuli
  * - Candidate↔stimulus index randomized per scenario (1..3)
@@ -8,12 +14,6 @@
  *      • The other CEO + ECE as AUDIOS
  * - Deterministic, participant-balanced modality assignment
  * - White background, black text
- *
- * NOTE on file names:
- *   - Images expected at: assets/faces/<gender>/face01_var1.png (…02, …03)
- *   - Audio  expected at: assets/audios/<gender>/voice01_var1.wav (…02, …03)
- *     If your audio files use a different pattern (e.g., male_voice01_pitch1.wav),
- *     just change the audioPath() function accordingly.
  ****************************************************/
 /* global firebase, jsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
 
@@ -33,7 +33,7 @@ function facePath(gender, faceIndex, variant){
 }
 function audioPath(gender, voiceIndex, variant){
   const voiceNum = String(voiceIndex).padStart(2,'0'); // 1..3 → 01..03
-  // Change the line below if your audio naming differs (e.g., male_voice01_pitch1.wav)
+  // Change if your audio naming differs (e.g., ${gender}_voice${voiceNum}_pitch${variant}.wav)
   return `assets/audios/${gender}/voice${voiceNum}_var${variant}.wav`;
 }
 
@@ -43,12 +43,12 @@ function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 
 /* ---------- Content (edit as needed) ---------- */
 const CEO_SCENARIOS = [
-  {id:'CEO_A',title:'CEO Scenario A',text:`NovaLink is a Canadian tech firm, with a team of 5000 employees, that builds smart software to help companies manage their supply chains. We’ve grown across North America and are now preparing to expand into Europe. At the same time, we’re dealing with a hostile takeover attempt from a U.S. competitor. We want to remain independent and grow internationally, without losing our focus or team stability. We are looking for a new CEO to help navigate these challenges and opportunities.`},
-  {id:'CEO_B',title:'CEO Scenario B',text:`GreenPath develops software to help other companies track and reduce their environmental impact in Canada and Europe. We’ve grown quickly to a team of 500, but that growth has created new pressures. We’ve fallen behind in updating our tools and platforms to keep up with new climate regulations, particularly in Europe.  Furthermore, our switch back from remote to in-office mode after the COVID lockdowns has left some staff dissatisfied and unheard. We now want to consolidate and focus on doing two things better: staying ahead of environmental standards and making GreenPath a more connected and desirable place to work. We are looking for a new CEO to help us achieve these goals.`}
+  {id:'CEO_A',title:'NovaLink',text:`NovaLink is a Canadian tech firm, with a team of 5000 employees, that builds smart software to help companies manage their supply chains. We’ve grown across North America and are now preparing to expand into Europe. At the same time, we’re dealing with a hostile takeover attempt from a U.S. competitor. We want to remain independent and grow internationally, without losing our focus or team stability. We are looking for a new CEO to help navigate these challenges and opportunities.`},
+  {id:'CEO_B',title:'GreenPath',text:`GreenPath develops software to help other companies track and reduce their environmental impact in Canada and Europe. We’ve grown quickly to a team of 500, but that growth has created new pressures. We’ve fallen behind in updating our tools and platforms to keep up with new climate regulations, particularly in Europe.  Furthermore, our switch back from remote to in-office mode after the COVID lockdowns has left some staff dissatisfied and unheard. We now want to consolidate and focus on doing two things better: staying ahead of environmental standards and making GreenPath a more connected and desirable place to work. We are looking for a new CEO to help us achieve these goals.`}
 ];
 const ECE_SCENARIOS = [
-  {id:'ECE_A',title:'ECE Scenario A',text:`Little Steps Early Learning Centre is a large, multi-centre daycare located in various parts of the Greater Toronto Area. Our downtown Toronto centre currently serves 45 children with a team of 8 dedicated staff members. Recently, the centre has been facing increasing challenges related to (i) staff adopting to new curriculum regulations and (ii) classroom management and disruptive behaviour. As a result, the centre is seeking an Early Childhood Educator (ECE) who can provide a firm lead to staff and navigate both staff and classroom conflict effectively.`},
-  {id:'ECE_B',title:'ECE Scenario B',text:`Early Minds Academy is a large, multi-centre daycare located in various parts of the Greater Vancouver Area. Our downtown Vancouver centre currently serves 45 children with a team of 8 dedicated staff members. At this time, the centre is in the process of enhancing its program to align more closely with modern child-centered approaches that prioritize emotional development and interpersonal learning. As a result, the centre is seeking an Early Childhood Educator (ECE) who is warm, nurturing, and emotionally attuned and keeps abreast of recent research in child development. The ideal candidate will foster close relationships with children and families and bring new proven techniques to the classroom.`}
+  {id:'ECE_A',title:'Little Steps Early Learning Centre',text:`Little Steps Early Learning Centre is a large, multi-centre daycare located in various parts of the Greater Toronto Area. Our downtown Toronto centre currently serves 45 children with a team of 8 dedicated staff members. Recently, the centre has been facing increasing challenges related to (i) staff adopting to new curriculum regulations and (ii) classroom management and disruptive behaviour. As a result, the centre is seeking an Early Childhood Educator (ECE) who can provide a firm lead to staff and navigate both staff and classroom conflict effectively.`},
+  {id:'ECE_B',title:'Early Minds Academy',text:`Early Minds Academy is a large, multi-centre daycare located in various parts of the Greater Vancouver Area. Our downtown Vancouver centre currently serves 45 children with a team of 8 dedicated staff members. At this time, the centre is in the process of enhancing its program to align more closely with modern child-centered approaches that prioritize emotional development and interpersonal learning. As a result, the centre is seeking an Early Childhood Educator (ECE) who is warm, nurturing, and emotionally attuned and keeps abreast of recent research in child development. The ideal candidate will foster close relationships with children and families and bring new proven techniques to the classroom.`}
 ];
 
 const BIOS = {
@@ -86,7 +86,8 @@ function assignIndicesToCandidates(candidates) {
 }
 
 // Build per-candidate trials (one page per candidate) for a given MODALITY: 'image' | 'audio'
-function buildCandidateTrials(scenario, modality) {
+// Added scenarioNumber to label pages as "Scenario 1..4"
+function buildCandidateTrials(scenario, modality, scenarioNumber) {
   const isCEO = scenario.id.startsWith('CEO');
   const gender = isCEO ? 'male' : 'female';
 
@@ -118,14 +119,18 @@ function buildCandidateTrials(scenario, modality) {
     const prompt = `
       ${stimHTML}
       <p><b>${cand.name}</b><br>${cand.bio}</p>
-      <p>How likely would you be to hire this candidate? (1=Not at all, 7=Extremely likely)</p>
+      <p><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
     `;
 
     return {
       type: jsPsychSurveyLikert,
-      preamble: `<h3>${scenario.title} — ${modality === 'image' ? 'Bio + Face' : 'Bio + Audio'}</h3><p>${scenario.text}</p>`,
+      // Header now says "Scenario X" and everything is centered
+      preamble: `<div style="text-align:center; max-width:900px; margin:0 auto;">
+                   <h3><b>Scenario ${scenarioNumber}</b></h3>
+                   <p>${scenario.text}</p>
+                 </div>`,
       questions: [{
-        prompt,
+        prompt: `<div style="text-align:center; max-width:900px; margin:0 auto;">${prompt}</div>`,
         name: `${scenario.id}${DELIM}${modality}${DELIM}${cand.id}`,
         labels: ["1","2","3","4","5","6","7"],
         required: true
@@ -164,9 +169,14 @@ function buildCandidateTrials(scenario, modality) {
     };
   });
 
+  // Preface centered; scenario title bold
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
-    stimulus: `<h3>${scenario.title}</h3><p>${scenario.text}</p><p>Press SPACE to continue.</p>`,
+    stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
+                 <h3><b>${scenario.title}</b></h3>
+                 <p>${scenario.text}</p>
+                 <p>Press <b>SPACE</b> to continue.</p>
+               </div>`,
     choices: [' '],
     data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
   };
@@ -236,14 +246,18 @@ const jsPsych = initJsPsych({
       }
 
       document.body.innerHTML = `
-        <h2>All done!</h2>
-        <p>Your responses have been securely logged to Firebase.</p>
+        <div style="text-align:center; max-width:900px; margin:48px auto;">
+          <h2>All done!</h2>
+          <p>Your responses have been securely logged to Firebase.</p>
+        </div>
       `;
     } catch (err) {
       console.error("Firebase upload failed:", err);
       document.body.innerHTML = `
-        <h2>All done!</h2>
-        <p>Your responses could not be uploaded automatically, so they will download locally.</p>
+        <div style="text-align:center; max-width:900px; margin:48px auto;">
+          <h2>All done!</h2>
+          <p>Your responses could not be uploaded automatically, so they will download locally.</p>
+        </div>
       `;
       jsPsych.data.get().localSave('csv', `backup_${PARTICIPANT_ID}.csv`);
     }
@@ -253,23 +267,30 @@ const jsPsych = initJsPsych({
 /* ---------- Timeline ---------- */
 const timeline=[];
 
+// Welcome screen centered; bold "Welcome to the experiment" + bold key info
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus: `
-    <h2>Welcome</h2>
-    <p>In this study, you will read job scenarios and rate candidates on a 1–7 scale.</p>
-    <p>You will complete four scenarios (two CEO and two ECE). For each scenario, each candidate appears on a separate page with their bio and either a face image or an audio recording.</p>
-    <p>Press SPACE to begin.</p>
+    <div style="text-align:center; max-width:900px; margin:48px auto;">
+      <h2><b>Welcome to the experiment</b></h2>
+      <p>In this study, you will be in charge of hiring two Chief Executive Officers for two different Canadian companies as well as two Early Childhood Educators for two different Canada-based childhood centers.</p>
+      <p><b>You will complete four scenarios</b> (two CEO and two ECE). For each scenario, each candidate appears on a separate page with their bio and either a face image or an audio recording.</p>
+      <p>Press <b>SPACE</b> to begin.</p>
+    </div>
   `,
   choices:[' ']
 });
 
+// Instructions centered; bold important info
 timeline.push({
   type:jsPsychInstructions,
   pages:[
-    `<h3>Instructions</h3>
-     <p>For each scenario, rate three candidates on how likely you would be to hire them (1–7).</p>
-     <p>Some scenarios present faces, others present audio voices. Please consider the info provided with each candidate and respond honestly.</p>`
+    `<div style="text-align:center; max-width:900px; margin:48px auto;">
+       <h3><b>Instructions</b></h3>
+       <p>For each scenario, rate <b>all three candidates</b> on a scale from <b>1 (Not at all likely)</b> to <b>7 (Extremely likely)</b>.</p>
+       <p><b>Some scenarios present faces, others present audio voices.</b> Please consider the information provided with each candidate and respond honestly.</p>
+       <p>You can proceed using the on-screen button after each response.</p>
+     </div>`
   ],
   show_clickable_nav:true
 });
@@ -310,15 +331,18 @@ SCENARIO_ORDER.forEach(scn=>{
 });
 timeline.push({ type: jsPsychPreload, images: preloadImages, audio: preloadAudio });
 
-// Build each scenario into: preface + three per-candidate pages, per assigned modality
-SCENARIO_ORDER.forEach(scn => {
+// Build each scenario into: centered preface + three per-candidate pages, labeled Scenario 1..4
+SCENARIO_ORDER.forEach((scn, idx) => {
   const modality = SCENARIO_MODALITY[scn.id];
-  timeline.push(...buildCandidateTrials(scn, modality));
+  timeline.push(...buildCandidateTrials(scn, modality, idx + 1));
 });
 
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
-  stimulus:`<h3>Thank you!</h3><p>Press SPACE to finish.</p>`,
+  stimulus:`<div style="text-align:center; max-width:900px; margin:48px auto;">
+              <h3>Thank you!</h3>
+              <p>Press <b>SPACE</b> to finish.</p>
+            </div>`,
   choices:[' ']
 });
 
