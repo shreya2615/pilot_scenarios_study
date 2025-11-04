@@ -275,7 +275,7 @@ const jsPsych = initJsPsych({
       document.body.innerHTML = `
         <div style="text-align:center; max-width:900px; margin:48px auto;">
           <h2>All done!</h2>
-          <p>Your responses have been securely logged to Firebase.</p>
+          <p>Your responses have been securely logged, you may now close this window.</p>
         </div>
       `;
     } catch (err) {
@@ -300,8 +300,10 @@ timeline.push({
   stimulus: `
     <div style="text-align:center; max-width:900px; margin:48px auto;">
       <h2><b>Welcome to the experiment</b></h2>
-      <p>In this study, you will be in charge of hiring two Chief Executive Officers for two different Canadian companies as well as two Early Childhood Educators for two different Canada-based childhood centers.</p>
-      <p><b>You will complete four scenarios</b> (two CEO and two ECE). For each scenario, each candidate appears on a separate page with their bio and either a face image or an audio recording.</p>
+      <p>Imagine you are a recruiter at NorthStar Talent Collective, you are in charge of hiring Chief Executive Officers and Early Childhood Educators for four different comapnies.</p>
+      <p>Two companies are looking for a new <b>Chief Executive Officer (CEO)</b> and two companies are looking for a new <b>Early Childhood Educator (ECE)</b>.</p>
+      <p>You will be presented with information about each company and three candidates applying for the position.</p>
+      <p>Your job is to evaluate each candidate and indicate how likely you would be to hire them for the position.</p>
       <p>Press <b>SPACE</b> to begin.</p>
     </div>
   `,
@@ -314,9 +316,12 @@ timeline.push({
   pages:[
     `<div style="text-align:center; max-width:900px; margin:48px auto;">
        <h3><b>Instructions</b></h3>
-       <p>For each scenario, rate <b>all three candidates</b> on a scale from <b>1 (Not at all likely)</b> to <b>7 (Extremely likely)</b>.</p>
-       <p><b>Some scenarios present faces, others present audio voices.</b> Please consider the information provided with each candidate and respond honestly.</p>
-       <p>You can proceed using the on-screen button after each response.</p>
+       <p>You will see <b>four different hiring scenarios</b>, each with three candidates. Each candidate will either be paired with an <b>image</b> of them or an <b>audio recording</b> of their application.</p>
+       <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
+       <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to hire</b> and <b>7</b> being <b>very likely to hire</b>.</p>
+       <p>Images or audios will be presented at random for each scenario.</p>
+       <p>If you wish to stop at any point, please simply close the window and your responses will not be recorded.</p>
+       <p>Please press <b>NEXT</b> to proceed.</p>
      </div>`
   ],
   show_clickable_nav:true
