@@ -1,21 +1,21 @@
 /****************************************************
  * Pilot Scenarios Study (interleaved image + audio)
- * PRESENTATION TWEAKS ONLY:
- * - Centered welcome + instructions; bold key lines
- * - Preface (scenario-only) centered; bold scenario title
+ * PRESENTATION FIXES:
+ * - All intro and scenario-only pages fully centered (vertical + horizontal)
+ * - Scenario title bold, scenario paragraph centered
+ * - Welcome + instructions centered; bold key lines
  * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
  *
- * CORE LOGIC UNCHANGED:
+ * CORE LOGIC:
  * - Each candidate shown on its own page
  * - Variant (1..3) fixed per participant across ALL stimuli
  * - Candidate↔stimulus index randomized per scenario (1..3)
  * - Every participant sees all FOUR scenarios:
  *      • One CEO + One ECE as IMAGES
- *      • The other CEO + ECE as AUDIOS
- * - Deterministic, participant-balanced modality assignment
- * - White background, black text
+ *      • The other CEO + ECE as AUDIOS (balanced by PID)
+ * - Firebase Realtime Database logging
  ****************************************************/
-/* global firebase, jsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
+/* global firebase, jsPsych, initJsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
 
 /* ---------- Participant & variant ---------- */
 const urlParams = new URLSearchParams(window.location.search);
@@ -28,12 +28,12 @@ const RANDOMIZE_DISPLAY_ORDER = true; // randomize candidate presentation order 
 
 /* ---------- Paths ---------- */
 function facePath(gender, faceIndex, variant){
-  const faceNum = String(faceIndex).padStart(2,'0'); // 1..3 → 01..03
+  const faceNum = String(faceIndex).padStart(2,'0'); // 01..03
   return `assets/faces/${gender}/face${faceNum}_var${variant}.png`;
 }
 function audioPath(gender, voiceIndex, variant){
-  const voiceNum = String(voiceIndex).padStart(2,'0'); // 1..3 → 01..03
-  // Change if your audio naming differs (e.g., ${gender}_voice${voiceNum}_pitch${variant}.wav)
+  const voiceNum = String(voiceIndex).padStart(2,'0'); // 01..03
+  // If your audio naming differs, update this template accordingly.
   return `assets/audios/${gender}/voice${voiceNum}_var${variant}.wav`;
 }
 
@@ -41,10 +41,10 @@ function audioPath(gender, voiceIndex, variant){
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 
-/* ---------- Content (edit as needed) ---------- */
+/* ---------- Content ---------- */
 const CEO_SCENARIOS = [
   {id:'CEO_A',title:'NovaLink',text:`NovaLink is a Canadian tech firm, with a team of 5000 employees, that builds smart software to help companies manage their supply chains. We’ve grown across North America and are now preparing to expand into Europe. At the same time, we’re dealing with a hostile takeover attempt from a U.S. competitor. We want to remain independent and grow internationally, without losing our focus or team stability. We are looking for a new CEO to help navigate these challenges and opportunities.`},
-  {id:'CEO_B',title:'GreenPath',text:`GreenPath develops software to help other companies track and reduce their environmental impact in Canada and Europe. We’ve grown quickly to a team of 500, but that growth has created new pressures. We’ve fallen behind in updating our tools and platforms to keep up with new climate regulations, particularly in Europe.  Furthermore, our switch back from remote to in-office mode after the COVID lockdowns has left some staff dissatisfied and unheard. We now want to consolidate and focus on doing two things better: staying ahead of environmental standards and making GreenPath a more connected and desirable place to work. We are looking for a new CEO to help us achieve these goals.`}
+  {id:'CEO_B',title:'GreenPath',text:`GreenPath develops software to help other companies track and reduce their environmental impact in Canada and Europe. We’ve grown quickly to a team of 500, but that growth has created new pressures. We’ve fallen behind in updating our tools and platforms to keep up with new climate regulations, particularly in Europe. Furthermore, our switch back from remote to in-office mode after the COVID lockdowns has left some staff dissatisfied and unheard. We now want to consolidate and focus on doing two things better: staying ahead of environmental standards and making GreenPath a more connected and desirable place to work. We are looking for a new CEO to help us achieve these goals.`}
 ];
 const ECE_SCENARIOS = [
   {id:'ECE_A',title:'Little Steps Early Learning Centre',text:`Little Steps Early Learning Centre is a large, multi-centre daycare located in various parts of the Greater Toronto Area. Our downtown Toronto centre currently serves 45 children with a team of 8 dedicated staff members. Recently, the centre has been facing increasing challenges related to (i) staff adopting to new curriculum regulations and (ii) classroom management and disruptive behaviour. As a result, the centre is seeking an Early Childhood Educator (ECE) who can provide a firm lead to staff and navigate both staff and classroom conflict effectively.`},
@@ -110,7 +110,6 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
       phase = 'bio_plus_face';
     } else {
       const aud = audioPath(gender, idx, VARIANT);
-      // controls + preload
       stimHTML = `<p><audio src="${aud}" controls preload="auto"></audio></p>`;
       loggedFile = aud;
       phase = 'bio_plus_audio';
@@ -124,10 +123,12 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
     return {
       type: jsPsychSurveyLikert,
-      // Header now says "Scenario X" and everything is centered
-      preamble: `<div style="text-align:center; max-width:900px; margin:0 auto;">
-                   <h3><b>Scenario ${scenarioNumber}</b></h3>
-                   <p>${scenario.text}</p>
+      // Header now says "Scenario X" and the header portion is centered
+      preamble: `<div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;">
+                   <div style="max-width:900px;">
+                     <h3><b>Scenario ${scenarioNumber}</b></h3>
+                     <p>${scenario.text}</p>
+                   </div>
                  </div>`,
       questions: [{
         prompt: `<div style="text-align:center; max-width:900px; margin:0 auto;">${prompt}</div>`,
@@ -169,13 +170,15 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  // Preface centered; scenario title bold
+  // Preface centered; scenario title bold and paragraph centered
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
-    stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
-                 <h3><b>${scenario.title}</b></h3>
-                 <p>${scenario.text}</p>
-                 <p>Press <b>SPACE</b> to continue.</p>
+    stimulus: `<div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;">
+                 <div style="max-width:900px;">
+                   <h3><b>${scenario.title}</b></h3>
+                   <p>${scenario.text}</p>
+                   <p>Press <b>SPACE</b> to continue.</p>
+                 </div>
                </div>`,
     choices: [' '],
     data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
@@ -246,17 +249,21 @@ const jsPsych = initJsPsych({
       }
 
       document.body.innerHTML = `
-        <div style="text-align:center; max-width:900px; margin:48px auto;">
-          <h2>All done!</h2>
-          <p>Your responses have been securely logged to Firebase.</p>
+        <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;">
+          <div style="max-width:900px;">
+            <h2>All done!</h2>
+            <p>Your responses have been securely logged to Firebase.</p>
+          </div>
         </div>
       `;
     } catch (err) {
       console.error("Firebase upload failed:", err);
       document.body.innerHTML = `
-        <div style="text-align:center; max-width:900px; margin:48px auto;">
-          <h2>All done!</h2>
-          <p>Your responses could not be uploaded automatically, so they will download locally.</p>
+        <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;">
+          <div style="max-width:900px;">
+            <h2>All done!</h2>
+            <p>Your responses could not be uploaded automatically, so they will download locally.</p>
+          </div>
         </div>
       `;
       jsPsych.data.get().localSave('csv', `backup_${PARTICIPANT_ID}.csv`);
@@ -267,29 +274,33 @@ const jsPsych = initJsPsych({
 /* ---------- Timeline ---------- */
 const timeline=[];
 
-// Welcome screen centered; bold "Welcome to the experiment" + bold key info
+// Welcome fully centered (vertical + horizontal) with bold headline
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus: `
-    <div style="text-align:center; max-width:900px; margin:48px auto;">
-      <h2><b>Welcome to the experiment</b></h2>
-      <p>In this study, you will be in charge of hiring two Chief Executive Officers for two different Canadian companies as well as two Early Childhood Educators for two different Canada-based childhood centers.</p>
-      <p><b>You will complete four scenarios</b> (two CEO and two ECE). For each scenario, each candidate appears on a separate page with their bio and either a face image or an audio recording.</p>
-      <p>Press <b>SPACE</b> to begin.</p>
+    <div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;">
+      <div style="max-width:900px;">
+        <h2><b>Welcome to the experiment</b></h2>
+        <p>In this study, you will be in charge of hiring two Chief Executive Officers for two different Canadian companies as well as two Early Childhood Educators for two different Canada-based childhood centers.</p>
+        <p><b>You will complete four scenarios</b> (two CEO and two ECE). For each scenario, each candidate appears on a separate page with their bio and either a face image or an audio recording.</p>
+        <p>Press <b>SPACE</b> to begin.</p>
+      </div>
     </div>
   `,
   choices:[' ']
 });
 
-// Instructions centered; bold important info
+// Instructions fully centered; bold key info
 timeline.push({
   type:jsPsychInstructions,
   pages:[
-    `<div style="text-align:center; max-width:900px; margin:48px auto;">
-       <h3><b>Instructions</b></h3>
-       <p>For each scenario, rate <b>all three candidates</b> on a scale from <b>1 (Not at all likely)</b> to <b>7 (Extremely likely)</b>.</p>
-       <p><b>Some scenarios present faces, others present audio voices.</b> Please consider the information provided with each candidate and respond honestly.</p>
-       <p>You can proceed using the on-screen button after each response.</p>
+    `<div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;">
+       <div style="max-width:900px;">
+         <h3><b>Instructions</b></h3>
+         <p>For each scenario, rate <b>all three candidates</b> on a scale from <b>1 (Not at all likely)</b> to <b>7 (Extremely likely)</b>.</p>
+         <p><b>Some scenarios present faces, others present audio voices.</b> Please consider the information provided with each candidate and respond honestly.</p>
+         <p>You can proceed using the on-screen button after each response.</p>
+       </div>
      </div>`
   ],
   show_clickable_nav:true
@@ -301,7 +312,7 @@ const ALL_SCENARIOS = [
   ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
 ];
 
-// Deterministic, balanced modality assignment across participants:
+// Balanced modality assignment across participants:
 //   hash % 2 === 0 → CEO_A: image, CEO_B: audio, ECE_A: image, ECE_B: audio
 //   hash % 2 === 1 → CEO_A: audio, CEO_B: image, ECE_A: audio, ECE_B: image
 const modFlip = simpleHash(PARTICIPANT_ID) % 2 === 1;
@@ -337,11 +348,14 @@ SCENARIO_ORDER.forEach((scn, idx) => {
   timeline.push(...buildCandidateTrials(scn, modality, idx + 1));
 });
 
+// Final screen centered
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
-  stimulus:`<div style="text-align:center; max-width:900px; margin:48px auto;">
-              <h3>Thank you!</h3>
-              <p>Press <b>SPACE</b> to finish.</p>
+  stimulus:`<div style="display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;">
+              <div style="max-width:900px;">
+                <h3>Thank you!</h3>
+                <p>Press <b>SPACE</b> to finish.</p>
+              </div>
             </div>`,
   choices:[' ']
 });
