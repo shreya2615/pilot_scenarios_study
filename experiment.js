@@ -417,13 +417,25 @@ const ALL_SCENARIOS = [
 ];
 
 // Balanced modality assignment
-const modFlip = simpleHash(PARTICIPANT_ID) % 2 === 1;
+// Randomized per participant (not seed-stable):
+// - Exactly one CEO is IMAGE, one CEO is AUDIO
+// - Exactly one ECE is IMAGE, one ECE is AUDIO
+
+function pickModalityPair(ids) {
+  const arr = shuffle([...ids]);   // randomize A/B order each run
+  const m = {};
+  m[arr[0]] = 'image';             // first gets image
+  m[arr[1]] = 'audio';             // second gets audio
+  return m;
+}
+
 const SCENARIO_MODALITY = {
-  CEO_A: modFlip ? 'audio' : 'image',
-  CEO_B: modFlip ? 'image' : 'audio',
-  ECE_A: modFlip ? 'audio' : 'image',
-  ECE_B: modFlip ? 'image' : 'audio'
+  ...pickModalityPair(['CEO_A','CEO_B']),
+  ...pickModalityPair(['ECE_A','ECE_B'])
 };
+
+// (Optional) sanity check:
+// console.log('SCENARIO_MODALITY', SCENARIO_MODALITY);
 
 // Random order of the 4 scenarios
 const SCENARIO_ORDER = shuffle(ALL_SCENARIOS);
