@@ -157,7 +157,10 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     } else {
       const aud = audioPath(gender, idx, VARIANT);
       const controlsList = `controlsList="nodownload noplaybackrate"`;
-      stimHTML = `<audio id="${audioId}" src="${aud}" controls preload="auto" ${controlsList} style="display:block;margin:4px auto;width:100%;max-width:520px;"></audio>`;
+      stimHTML = `<audio id="${audioId}" src="${aud}" controls preload="auto" ${controlsList} style="display:block;margin:4px auto;width:100%;max-width:520px;"></audio>
+                  <p style="margin:6px 0 0 0; font-size:0.95rem; font-style:italic; opacity:0.9;">
+                    The contents in the paragraph below are identical to what is being said in the audio.
+                  </p>`;
       loggedFile = aud;
       phase = 'bio_plus_audio';
     }
@@ -168,12 +171,15 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
          </p>`
       : ``;
 
+    // Bio color: gray only for audio pages
+    const bioColor = (modality === 'audio') ? 'color:#6b7280;' : '';
+
     const prompt = `
       <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
         <h3 style="margin:6px 0;"><b>Scenario ${scenarioNumber}</b></h3>
         <p style="margin:6px 0;">${scenario.text}</p>
         <div>${stimHTML}</div>
-        <p style="margin:8px 0 6px 0;"><b>${cand.name}</b><br>${cand.bio}</p>
+        <p style="margin:8px 0 6px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p>
         <p style="margin:6px 0;"><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
         ${gateHint}
       </div>
@@ -416,26 +422,18 @@ const ALL_SCENARIOS = [
   ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
 ];
 
-// Balanced modality assignment
-// Randomized per participant (not seed-stable):
-// - Exactly one CEO is IMAGE, one CEO is AUDIO
-// - Exactly one ECE is IMAGE, one ECE is AUDIO
-
+// Balanced modality assignment (random per participant; still ensures 1 CEO + 1 ECE as image, and the other 1 CEO + 1 ECE as audio)
 function pickModalityPair(ids) {
-  const arr = shuffle([...ids]);   // randomize A/B order each run
+  const arr = shuffle([...ids]);
   const m = {};
-  m[arr[0]] = 'image';             // first gets image
-  m[arr[1]] = 'audio';             // second gets audio
+  m[arr[0]] = 'image';
+  m[arr[1]] = 'audio';
   return m;
 }
-
 const SCENARIO_MODALITY = {
   ...pickModalityPair(['CEO_A','CEO_B']),
   ...pickModalityPair(['ECE_A','ECE_B'])
 };
-
-// (Optional) sanity check:
-// console.log('SCENARIO_MODALITY', SCENARIO_MODALITY);
 
 // Random order of the 4 scenarios
 const SCENARIO_ORDER = shuffle(ALL_SCENARIOS);
@@ -447,7 +445,6 @@ SCENARIO_ORDER.forEach(scn=>{
   const gender = scn.kind === 'CEO' ? 'male' : 'female';
   const modality = SCENARIO_MODALITY[scn.id];
   if (modality === 'image') {
-    // faces 1..3 (variant fixed)
     for(let i=1;i<=3;i++){ preloadImages.push(facePath(gender,i,VARIANT)); }
   } else {
     const isA = /_A$/.test(scn.id);
