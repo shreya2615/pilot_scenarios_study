@@ -176,11 +176,13 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
     const prompt = `
   <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
-    <h3 style="margin:10px 0;"><b>Scenario ${scenarioNumber}</b></h3>
-    <p style="margin:10px 0 28px 0;">${scenario.text}</p>  <!-- more space before image/audio -->
-    <div style="margin-bottom:28px;">${stimHTML}</div>  <!-- more space below image/audio -->
-    <p style="margin:10px 0 28px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p> <!-- more space below bio -->
-    <p style="margin:22px 0 12px 0;"><b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)</p>
+    <h3 style="margin:2px 0 6px 0;"><b>Scenario ${scenarioNumber}</b></h3>
+    <p style="margin:6px 0 20px 0;">${scenario.text}</p>  <!-- reduced top margin -->
+    <div style="margin-bottom:22px;">${stimHTML}</div>  <!-- modest gap below image/audio -->
+    <p style="margin:8px 0 22px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p> <!-- adjusted gap below bio -->
+    <p style="margin:18px 0 10px 0;">
+      <b>How likely would you be to hire this candidate?</b> (1=Not at all, 7=Extremely likely)
+    </p>
     ${gateHint}
   </div>
 `;
