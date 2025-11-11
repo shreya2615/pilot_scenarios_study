@@ -5,7 +5,7 @@
  * - Preface (scenario-only) centered; bold scenario title
  * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
  * - NEW: Scenario announcement screen before each scenario
- * - NEW: 2s blank screen between candidates
+ * - NEW: 1s fixation cross between candidates
  *
  * CORE LOGIC:
  * - Each candidate shown on its own page
@@ -53,9 +53,7 @@ function audioPath(gender, voiceIndex, variant){
 /* ---------- Utils ---------- */
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
-function ordinalWord(n){
-  return (['first','second','third','fourth'][n-1]) || `${n}th`;
-}
+function ordinalWord(n){ return (['first','second','third','fourth'][n-1]) || `${n}th`; }
 
 /* ---------- COMPACT CSS (applies ONLY when body has .compact-trial) ---------- */
 (function injectCompactCssOnce(){
@@ -63,15 +61,13 @@ function ordinalWord(n){
   const css = `
     /* ——— Compact layout used ONLY on candidate pages ——— */
     body.compact-trial #jspsych-content {
-      padding-top: 10px !important;     /* was ~40–50px in defaults */
+      padding-top: 10px !important;
       margin-top: 0 !important;
     }
     body.compact-trial .jspsych-content-wrapper {
       padding-top: 0 !important;
       margin-top: 0 !important;
     }
-
-    /* Tighten header + first element default margins */
     body.compact-trial .candidate-block > :first-child {
       margin-top: 0 !important;
       padding-top: 0 !important;
@@ -80,8 +76,7 @@ function ordinalWord(n){
       margin: 0 0 6px 0 !important;     /* no space above "Scenario X" */
       line-height: 1.22;
     }
-
-    /* Your existing compact rules */
+    /* Tight baseline spacing */
     body.compact-trial .candidate-block p { margin: 6px 0; line-height: 1.28; }
     body.compact-trial .candidate-block img { max-width: 220px; height: auto; margin: 4px 0; }
     body.compact-trial .candidate-block audio { width: 100%; max-width: 520px; margin: 4px 0; }
@@ -150,7 +145,7 @@ function audioIndexFor(scenarioId, candId){
 
 /* ---------- Core trial builder ---------- */
 // MODALITY: 'image' | 'audio'; scenarioNumber labels pages as "Scenario 1..4"
-// (NEW) Adds: scenario announcement page, and 2s blank between candidates
+// Adds: scenario announcement page, and 1s fixation between candidates
 function buildCandidateTrials(scenario, modality, scenarioNumber) {
   const isCEO = scenario.id.startsWith('CEO');
   const gender = isCEO ? 'male' : 'female';
@@ -205,7 +200,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     <div style="margin-bottom:22px;">${stimHTML}</div>
     <p style="margin:8px 0 26px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p>
     <p style="margin:18px 0 10px 0;">
-      <b>How likely would you be to reccomend this candidate for hiring?</b> (1=Not at all, 7=Extremely likely)
+      <b>How likely would you be to recommend this candidate?</b> (1=Not at all, 7=Extremely likely)
     </p>
     ${gateHint}
   </div>
@@ -223,7 +218,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
       button_label: 'Continue',
 
       /* Only candidate pages get compact layout */
-  on_start: () => { document.body.classList.add('compact-trial'); },
+      on_start: () => { document.body.classList.add('compact-trial'); },
 
       /* Gate audio playback if configured */
       on_load: () => {
@@ -311,24 +306,24 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  /* --- UPDATED: 1s fixation cross between candidates --- */
-const interleaved = [];
-trials.forEach((t, i) => {
-  interleaved.push(t);
-  if (i < trials.length - 1) {
-    interleaved.push({
-      type: jsPsychHtmlKeyboardResponse,
-      stimulus: `
-        <div style="height:100vh; display:flex; align-items:center; justify-content:center;">
-          <h1 style="font-size:48px; font-weight:normal;">+</h1>
-        </div>
-      `,
-      choices: "NO_KEYS",
-      trial_duration: 1000,   // 1 second instead of 2
-      data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
-    });
-  }
-});
+  /* --- 1s fixation cross between candidates --- */
+  const interleaved = [];
+  trials.forEach((t, i) => {
+    interleaved.push(t);
+    if (i < trials.length - 1) {
+      interleaved.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `
+          <div style="height:100vh; display:flex; align-items:center; justify-content:center;">
+            <h1 style="font-size:48px; font-weight:normal;">+</h1>
+          </div>
+        `,
+        choices: "NO_KEYS",
+        trial_duration: 1000,   // 1 second
+        data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
+      });
+    }
+  });
 
   /* Preface centered; scenario title bold (not compact) */
   const preface = {
@@ -342,19 +337,33 @@ trials.forEach((t, i) => {
     data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
   };
 
-  /* --- NEW: Scenario announcement screen before each scenario --- */
+  /* --- Scenario announcement screen (centered, large text) --- */
   const announce = {
     type: jsPsychHtmlKeyboardResponse,
-    stimulus: `<div style="text-align:center; max-width:900px; margin:48px auto;">
-                 <p>You will now be presented with the <b>${ordinalWord(scenarioNumber)}</b> scenario.</p>
-                 <p>Press <b>SPACE</b> to see the scenario.</p>
-               </div>`,
+    stimulus: `
+      <div style="
+        height:100vh;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        text-align:center;
+      ">
+        <p style="font-size:32px; margin:0 0 12px 0;">
+          <b>You will now be presented with the ${ordinalWord(scenarioNumber)}</b> scenario.
+        </p>
+        <p style="font-size:22px; margin:0;">
+          Press <b>SPACE</b> to see the scenario.
+        </p>
+      </div>
+    `,
     choices: [' '],
     data: { trial_type:'scenario_announce', scenario_id: scenario.id, scenario_number: scenarioNumber }
   };
 
+  // ✅ Return the full set for this scenario
   return [announce, preface, ...interleaved];
-}
+} // <-- closes buildCandidateTrials
 
 /* ---------- Firebase Logging Setup ---------- */
 const firebaseConfig = {
@@ -448,7 +457,7 @@ timeline.push({
       <p>Imagine you are a recruiter at NorthStar Talent Collective, you are in charge of reviewing candidate profiles for four different companies looking to hire an employee.</p>
       <p>Two companies are looking to hire a new <b>Chief Executive Officer (CEO)</b> and two companies are looking to hire a new <b>Early Childhood Educator (ECE)</b>.</p>
       <p>You will be presented with information about each company including the qualifications they are looking for in a new employee, and the profiles of three candidates applying for each position.</p>
-      <p>Your job is to evaluate each candidate and indicate how likely you would be to reccommend them for the position considering the companies requirments.</p>
+      <p>Your job is to evaluate each candidate and indicate how likely you would be to recommend them for the position considering the companies’ requirements.</p>
       <p>Press <b>SPACE</b> to begin.</p>
     </div>
   `,
@@ -461,9 +470,9 @@ timeline.push({
   pages:[
     `<div style="text-align:center; max-width:900px; margin:48px auto;">
        <h3><b>Instructions</b></h3>
-       <p>You will see <b>four different scenarios</b> of companies looking to hire an employee, each with certain qualifications they are looking for. Along side each hiring scenario, three job applicants will be presented. Each applicants profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their application.</p>
+       <p>You will see <b>four different scenarios</b> of companies looking to hire an employee, each with certain qualifications they are looking for. Alongside each hiring scenario, three job applicants will be presented. Each applicant’s profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their application.</p>
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
-       <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to reccomend for hiring</b> and <b>7</b> being <b>very likely to reccomend for hiring</b>.</p>
+       <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend for hiring</b> and <b>7</b> being <b>very likely to recommend for hiring</b>.</p>
        <p>Images or audios will be presented at random for each scenario.</p>
        <p>If you wish to stop at any point, please simply close the window and your responses will not be recorded.</p>
        <p>Please press <b>NEXT</b> to proceed.</p>
