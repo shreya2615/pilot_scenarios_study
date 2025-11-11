@@ -88,7 +88,7 @@ function ordinalWord(n){
     body.compact-trial .jspsych-survey-likert-question { margin: 6px 0 !important; }
     body.compact-trial .jspsych-survey-likert-statement { margin-bottom: 6px !important; }
     body.compact-trial .jspsych-survey-likert-opts { margin: 4px 0 !important; }
-    body.compact-trial .jspsych-btn { margin-top: 8px !important; }
+    body.compact-trial .jspsych-btn { margin-top: 4px !important; }
   `;
   const el = document.createElement('style');
   el.id = 'compact-trial-css';
