@@ -193,9 +193,9 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     // Bio color: gray only for audio pages
     const bioColor = (modality === 'audio') ? 'color:#6b7280;' : '';
 
-    const prompt = `
+     const prompt = `
   <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
-    <h3 style="margin:0; padding-top:0;"><b>Scenario ${scenarioNumber}</b></h3>
+    <h3 style="margin:0; padding-top:0;"><b>${scenario.title}</b></h3>
     <p style="margin:6px 0 20px 0;">${scenario.text}</p>
     <div style="margin-bottom:22px;">${stimHTML}</div>
     <p style="margin:8px 0 26px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p>
@@ -205,6 +205,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     ${gateHint}
   </div>
 `;
+
 
     return {
       type: jsPsychSurveyLikert,
