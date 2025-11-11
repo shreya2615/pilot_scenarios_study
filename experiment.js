@@ -61,16 +61,34 @@ function ordinalWord(n){
 (function injectCompactCssOnce(){
   if (document.getElementById('compact-trial-css')) return;
   const css = `
-    body.compact-trial .candidate-block p { margin: 14px 0; line-height: 1.45; }
-    body.compact-trial .candidate-block h3 { margin: 14px 0; line-height: 1.3; }
-    body.compact-trial .candidate-block img { max-width: 240px; height: auto; margin: 12px 0; }
-    body.compact-trial .candidate-block audio { width: 100%; max-width: 540px; margin: 12px 0; }
+    /* ——— Compact layout used ONLY on candidate pages ——— */
+    body.compact-trial #jspsych-content {
+      padding-top: 10px !important;     /* was ~40–50px in defaults */
+      margin-top: 0 !important;
+    }
+    body.compact-trial .jspsych-content-wrapper {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
 
-    /* Relax spacing for Likert section */
-    body.compact-trial .jspsych-survey-likert-question { margin: 14px 0 !important; }
-    body.compact-trial .jspsych-survey-likert-statement { margin-bottom: 12px !important; }
-    body.compact-trial .jspsych-survey-likert-opts { margin: 10px 0 !important; }
-    body.compact-trial .jspsych-btn { margin-top: 16px !important; }
+    /* Tighten header + first element default margins */
+    body.compact-trial .candidate-block > :first-child {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    body.compact-trial .candidate-block h3 {
+      margin: 0 0 6px 0 !important;     /* no space above "Scenario X" */
+      line-height: 1.22;
+    }
+
+    /* Your existing compact rules */
+    body.compact-trial .candidate-block p { margin: 6px 0; line-height: 1.28; }
+    body.compact-trial .candidate-block img { max-width: 220px; height: auto; margin: 4px 0; }
+    body.compact-trial .candidate-block audio { width: 100%; max-width: 520px; margin: 4px 0; }
+    body.compact-trial .jspsych-survey-likert-question { margin: 6px 0 !important; }
+    body.compact-trial .jspsych-survey-likert-statement { margin-bottom: 6px !important; }
+    body.compact-trial .jspsych-survey-likert-opts { margin: 4px 0 !important; }
+    body.compact-trial .jspsych-btn { margin-top: 8px !important; }
   `;
   const el = document.createElement('style');
   el.id = 'compact-trial-css';
