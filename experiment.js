@@ -311,24 +311,20 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  /* --- UPDATED: 1s fixation cross between candidates --- */
-const interleaved = [];
-trials.forEach((t, i) => {
-  interleaved.push(t);
-  if (i < trials.length - 1) {
-    interleaved.push({
-      type: jsPsychHtmlKeyboardResponse,
-      stimulus: `
-        <div style="height:100vh; display:flex; align-items:center; justify-content:center;">
-          <h1 style="font-size:48px; font-weight:normal;">+</h1>
-        </div>
-      `,
-      choices: "NO_KEYS",
-      trial_duration: 1000,   // 1 second instead of 2
-      data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
-    });
-  }
-});
+  /* --- NEW: 2s blank screen between candidates --- */
+  const interleaved = [];
+  trials.forEach((t, i) => {
+    interleaved.push(t);
+    if (i < trials.length - 1) {
+      interleaved.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="height:100vh;"></div>`,
+        choices: "NO_KEYS",
+        trial_duration: 2000,
+        data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
+      });
+    }
+  });
 
   /* Preface centered; scenario title bold (not compact) */
   const preface = {
