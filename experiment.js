@@ -444,7 +444,7 @@ timeline.push({
       <p>Imagine you are a recruiter at NorthStar Talent Collective, you are in charge of reviewing candidate profiles for four different companies looking to hire an employee.</p>
       <p>Two companies are looking to hire a new <b>Chief Executive Officer (CEO)</b> and two companies are looking to hire a new <b>Early Childhood Educator (ECE)</b>.</p>
       <p>You will be presented with information about each company including the qualifications they are looking for in a new employee, and the profiles of three candidates applying for each position.</p>
-      <p>Your job is to evaluate each candidate and indicate how likely you would be to reccomend them for the position considering the companies requirments..</p>
+      <p>Your job is to evaluate each candidate and indicate how likely you would be to reccommend them for the position considering the companies requirments.</p>
       <p>Press <b>SPACE</b> to begin.</p>
     </div>
   `,
@@ -457,7 +457,7 @@ timeline.push({
   pages:[
     `<div style="text-align:center; max-width:900px; margin:48px auto;">
        <h3><b>Instructions</b></h3>
-       <p>You will see <b>four different scenarios</b> of companies looking to hire an employee, each certain qualifications they are looking for. Along side each hiring scenario, three job applicants will be presented. Each applicants profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their application.</p>
+       <p>You will see <b>four different scenarios</b> of companies looking to hire an employee, each with certain qualifications they are looking for. Along side each hiring scenario, three job applicants will be presented. Each applicants profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their application.</p>
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
        <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to reccomend for hiring</b> and <b>7</b> being <b>very likely to reccomend for hiring</b>.</p>
        <p>Images or audios will be presented at random for each scenario.</p>
