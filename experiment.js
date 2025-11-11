@@ -4,6 +4,8 @@
  * - Centered welcome + instructions; bold key lines
  * - Preface (scenario-only) centered; bold scenario title
  * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
+ * - NEW: Scenario announcement screen before each scenario
+ * - NEW: 2s blank screen between candidates
  *
  * CORE LOGIC:
  * - Each candidate shown on its own page
@@ -15,7 +17,7 @@
  * - Every participant sees all FOUR scenarios:
  *      • One CEO + One ECE as IMAGES
  *      • The other CEO + ECE as AUDIOS
- * - Deterministic, participant-balanced modality assignment
+ * - Balanced per-participant modality assignment (random A/B within CEO & ECE)
  * - Optional audio gating (must play full / min seconds / free)
  * - White background, black text
  ****************************************************/
@@ -51,6 +53,9 @@ function audioPath(gender, voiceIndex, variant){
 /* ---------- Utils ---------- */
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
+function ordinalWord(n){
+  return (['first','second','third','fourth'][n-1]) || `${n}th`;
+}
 
 /* ---------- COMPACT CSS (applies ONLY when body has .compact-trial) ---------- */
 (function injectCompactCssOnce(){
@@ -125,8 +130,9 @@ function audioIndexFor(scenarioId, candId){
   return base + (n - 1);
 }
 
-// Build per-candidate trials (one page per candidate) for a given MODALITY: 'image' | 'audio'
-// scenarioNumber labels pages as "Scenario 1..4"
+/* ---------- Core trial builder ---------- */
+// MODALITY: 'image' | 'audio'; scenarioNumber labels pages as "Scenario 1..4"
+// (NEW) Adds: scenario announcement page, and 2s blank between candidates
 function buildCandidateTrials(scenario, modality, scenarioNumber) {
   const isCEO = scenario.id.startsWith('CEO');
   const gender = isCEO ? 'male' : 'female';
@@ -151,13 +157,13 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
     if (modality === 'image') {
       const img = facePath(gender, idx, VARIANT);
-      stimHTML = `<img src="${img}" alt="Candidate face" style="display:block;margin:4px auto;max-width:220px;height:auto;">`;
+      stimHTML = `<img src="${img}" alt="Candidate face" style="display:block;margin:4px auto;max-width:240px;height:auto;">`;
       loggedFile = img;
       phase = 'bio_plus_face';
     } else {
       const aud = audioPath(gender, idx, VARIANT);
       const controlsList = `controlsList="nodownload noplaybackrate"`;
-      stimHTML = `<audio id="${audioId}" src="${aud}" controls preload="auto" ${controlsList} style="display:block;margin:4px auto;width:100%;max-width:520px;"></audio>
+      stimHTML = `<audio id="${audioId}" src="${aud}" controls preload="auto" ${controlsList} style="display:block;margin:4px auto;width:100%;max-width:540px;"></audio>
                   <p style="margin:6px 0 0 0; font-size:0.95rem; font-style:italic; opacity:0.9;">
                     The contents in the paragraph below are identical to what is being said in the audio.
                   </p>`;
@@ -177,9 +183,9 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     const prompt = `
   <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
     <h3 style="margin:2px 0 6px 0;"><b>Scenario ${scenarioNumber}</b></h3>
-    <p style="margin:6px 0 20px 0;">${scenario.text}</p>  <!-- reduced top margin -->
-    <div style="margin-bottom:22px;">${stimHTML}</div>  <!-- modest gap below image/audio -->
-    <p style="margin:8px 0 26px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p> <!-- adjusted gap below bio -->
+    <p style="margin:6px 0 20px 0;">${scenario.text}</p>
+    <div style="margin-bottom:22px;">${stimHTML}</div>
+    <p style="margin:8px 0 26px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p>
     <p style="margin:18px 0 10px 0;">
       <b>How likely would you be to reccomend this candidate for hiring?</b> (1=Not at all, 7=Extremely likely)
     </p>
@@ -287,7 +293,22 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  // Preface centered; scenario title bold (unchanged and not compact)
+  /* --- NEW: 2s blank screen between candidates --- */
+  const interleaved = [];
+  trials.forEach((t, i) => {
+    interleaved.push(t);
+    if (i < trials.length - 1) {
+      interleaved.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="height:100vh;"></div>`,
+        choices: "NO_KEYS",
+        trial_duration: 2000,
+        data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
+      });
+    }
+  });
+
+  /* Preface centered; scenario title bold (not compact) */
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
@@ -299,7 +320,18 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
   };
 
-  return [preface, ...trials];
+  /* --- NEW: Scenario announcement screen before each scenario --- */
+  const announce = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div style="text-align:center; max-width:900px; margin:48px auto;">
+                 <p>You will now be presented with the <b>${ordinalWord(scenarioNumber)}</b> scenario.</p>
+                 <p>Press <b>SPACE</b> to see the scenario.</p>
+               </div>`,
+    choices: [' '],
+    data: { trial_type:'scenario_announce', scenario_id: scenario.id, scenario_number: scenarioNumber }
+  };
+
+  return [announce, preface, ...interleaved];
 }
 
 /* ---------- Firebase Logging Setup ---------- */
@@ -424,7 +456,7 @@ const ALL_SCENARIOS = [
   ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
 ];
 
-// Balanced modality assignment (random per participant; still ensures 1 CEO + 1 ECE as image, and the other 1 CEO + 1 ECE as audio)
+// Balanced modality assignment (random per participant; ensures 1 CEO + 1 ECE as image, and the other 1 CEO + 1 ECE as audio)
 function pickModalityPair(ids) {
   const arr = shuffle([...ids]);
   const m = {};
