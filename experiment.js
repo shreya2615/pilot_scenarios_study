@@ -313,18 +313,18 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
   /* --- NEW: 2s blank screen between candidates --- */
   const interleaved = [];
-  trials.forEach((t, i) => {
-    interleaved.push(t);
-    if (i < trials.length - 1) {
-      interleaved.push({
-        type: jsPsychHtmlKeyboardResponse,
-        stimulus: `<div style="height:100vh;"></div>`,
-        choices: "NO_KEYS",
-        trial_duration: 2000,
-        data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
-      });
-    }
-  });
+trials.forEach((t, i) => {
+  interleaved.push(t);
+  if (i < trials.length - 1) {
+    interleaved.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `<div style="height:100vh;"></div>`,
+      choices: "NO_KEYS",
+      trial_duration: 2000,
+      data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
+    });
+  }
+});
 
   /* Preface centered; scenario title bold (not compact) */
   const preface = {
