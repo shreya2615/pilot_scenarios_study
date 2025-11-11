@@ -205,7 +205,14 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
       button_label: 'Continue',
 
       /* Only candidate pages get compact layout */
-      on_start: () => { document.body.classList.add('compact-trial'); },
+      on_start: () => {
+  document.body.classList.add('compact-trial');
+  // Tighten the top padding for candidate pages
+  const jspsychContent = document.querySelector('#jspsych-content');
+  if (jspsychContent) {
+    jspsychContent.style.paddingTop = '10px'; // reduce default 50px padding to 10px
+  }
+},
 
       /* Gate audio playback if configured */
       on_load: () => {
