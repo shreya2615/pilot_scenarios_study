@@ -182,7 +182,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
     const prompt = `
   <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
-    <h3 style="margin:2px 0 6px 0;"><b>Scenario ${scenarioNumber}</b></h3>
+    <h3 style="margin:0; padding-top:0;"><b>Scenario ${scenarioNumber}</b></h3>
     <p style="margin:6px 0 20px 0;">${scenario.text}</p>
     <div style="margin-bottom:22px;">${stimHTML}</div>
     <p style="margin:8px 0 26px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p>
