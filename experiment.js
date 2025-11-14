@@ -317,15 +317,28 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
   // Preface
   const preface = {
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
-                 <h3><b>${scenario.title}</b></h3>
-                 <p>${scenario.text}</p>
-                 <p>Press <b>SPACE</b> to continue.</p>
-               </div>`,
-    choices: [' '],
-    data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
-  };
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <div style="
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 16px;
+      box-sizing:border-box;
+    ">
+      <div style="max-width:900px; text-align:center;">
+        <h3 style="margin:0 0 10px 0;"><b>${scenario.title}</b></h3>
+        <p style="margin:10px 0 18px 0; color: rgba(0,0,0,0.85);">
+          ${scenario.text}
+        </p>
+        <p>Press <b>SPACE</b> to continue.</p>
+      </div>
+    </div>
+  `,
+  choices: [' '],
+  data:{ trial_type:'preface', scenario_id:scenario.id, scenario_kind:isCEO?'CEO':'ECE', modality }
+};
 
   // Announcement
   const announce = {
