@@ -324,15 +324,17 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:0 16px;
+      padding:0 24px;
       box-sizing:border-box;
     ">
       <div style="max-width:900px; text-align:center;">
-        <h3 style="margin:0 0 10px 0;"><b>${scenario.title}</b></h3>
-        <p style="margin:10px 0 18px 0; color: rgba(0,0,0,0.85);">
+        <h3 style="margin:0 0 16px 0; font-size:30px;"><b>${scenario.title}</b></h3>
+        <p style="margin:10px 0 24px 0; font-size:20px; line-height:1.5; color:rgba(0,0,0,0.85);">
           ${scenario.text}
         </p>
-        <p>Press <b>SPACE</b> to continue.</p>
+        <p style="font-size:18px; margin-top:24px;">
+          Press <b>SPACE</b> to continue.
+        </p>
       </div>
     </div>
   `,
