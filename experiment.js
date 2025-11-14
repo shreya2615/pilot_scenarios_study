@@ -465,19 +465,20 @@ timeline.push({
 
 // --- DEMOGRAPHICS (age, gender, education) ---
 timeline.push({
-  type: jsPsychSurveyHtmlForm,
-  preamble: `<h3 style="text-align:center;">Demographic Questions</h3>`,
-  html: `
-    <div style="max-width:700px; margin:0 auto; font-size:16px;">
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `
+    <div style="max-width:700px; margin:48px auto; font-size:16px; text-align:left;">
+      <h3 style="text-align:center; margin-bottom:16px;">Demographic Questions</h3>
+
       <p>
-        <label for="age"><b>1. What is your age?</b></label><br>
-        <input name="age" id="age" type="number" min="18" max="99" required
+        <label for="demo_age"><b>1. What is your age?</b></label><br>
+        <input name="age" id="demo_age" type="number" min="18" max="99"
                style="width:120px; padding:4px; margin-top:4px;">
       </p>
 
       <p>
-        <label for="gender"><b>2. What is your gender?</b></label><br>
-        <select name="gender" id="gender" required
+        <label for="demo_gender"><b>2. What is your gender?</b></label><br>
+        <select name="gender" id="demo_gender"
                 style="width:260px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
           <option value="Male">Male</option>
@@ -488,8 +489,8 @@ timeline.push({
       </p>
 
       <p>
-        <label for="education"><b>3. What is your highest level of education completed?</b></label><br>
-        <select name="education" id="education" required
+        <label for="demo_edu"><b>3. What is your highest level of education completed?</b></label><br>
+        <select name="education" id="demo_edu"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
           <option value="High school">High school</option>
@@ -499,34 +500,54 @@ timeline.push({
           <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
+
+      <div style="text-align:center; margin-top:20px;">
+        <button id="demo_continue" class="jspsych-btn">Continue</button>
+      </div>
     </div>
   `,
-  button_label: "Continue",
+  choices: "NO_KEYS",   // we end the trial manually, not with a keypress
 
-  on_finish: (data) => {
-    // Get responses in a safe way
-    let resp = {};
-    if (data.response && typeof data.response === 'object') {
-      resp = data.response;
-    } else if (data.responses) {
-      try {
-        resp = JSON.parse(data.responses);
-      } catch (e) {
-        resp = {};
+  on_load: () => {
+    const btn = document.getElementById('demo_continue');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+      const ageEl = document.getElementById('demo_age');
+      const genderEl = document.getElementById('demo_gender');
+      const eduEl = document.getElementById('demo_edu');
+
+      const age = ageEl ? String(ageEl.value).trim() : "";
+      const gender = genderEl ? genderEl.value : "";
+      const education = eduEl ? eduEl.value : "";
+
+      // simple validation
+      if (!age || !gender || !education) {
+        alert("Please answer all questions before continuing.");
+        return;
       }
-    }
 
-    // Save to Firebase under this participant
-    const ref = db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`);
-    ref.set({
-      age: resp.age || "",
-      gender: resp.gender || "",
-      education: resp.education || "",
-      timestamp: new Date().toISOString()
+      const demoData = {
+        trial_type: 'demographics',
+        participant_id: PARTICIPANT_ID,
+        age,
+        gender,
+        education
+      };
+
+      // save to Firebase under this participant
+      db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
+        age,
+        gender,
+        education,
+        timestamp: new Date().toISOString()
+      });
+
+      // finish jsPsych trial with these values in the data
+      jsPsych.finishTrial(demoData);
     });
   }
 });
-
 
 
 // Instructions
