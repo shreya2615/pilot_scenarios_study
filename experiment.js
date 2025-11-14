@@ -355,7 +355,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         text-align:center;
       ">
         <p style="font-size:32px; margin:0 0 12px 0;">
-          <b>You will now be presented with the ${ordinalWord(scenarioNumber)}</b> scenario.
+          <b>You will now be presented with the ${ordinalWord(scenarioNumber)}scenario<b>.
         </p>
         <p style="font-size:22px; margin:0;">
           Press <b>SPACE</b> to see the scenario.
@@ -453,7 +453,7 @@ timeline.push({
   stimulus: `
     <div style="text-align:center; max-width:900px; margin:48px auto;">
       <h2><b>Welcome to the experiment</b></h2>
-      <p>Imagine you are a recruiter at NorthStar Talent Collective, you are in charge of reviewing candidate profiles for four different companies looking to hire an employee.</p>
+      <p>Imagine you are a recruiter at NorthStar Talent Collective. You are in charge of reviewing candidate profiles for four different companies looking to hire an employee.</p>
       <p>Two companies are looking to hire a new <b>Chief Executive Officer (CEO)</b> and two companies are looking to hire a new <b>Early Childhood Educator (ECE)</b>.</p>
       <p>You will be presented with information about each company including the qualifications they are looking for in a new employee, and the profiles of three candidates applying for each position.</p>
       <p>Your job is to evaluate each candidate and indicate how likely you would be to recommend them for the position considering the companies’ requirements.</p>
