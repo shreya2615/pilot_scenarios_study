@@ -463,6 +463,59 @@ timeline.push({
   choices:[' ']
 });
 
+// --- DEMOGRAPHICS SURVEY ---
+timeline.push({
+  type: jsPsychSurvey,
+  pages: [
+    [
+      {
+        type: "text",
+        prompt: "What is your age?",
+        name: "age",
+        required: true
+      },
+      {
+        type: "multi-choice",
+        prompt: "What is your gender?",
+        name: "gender",
+        options: ["Male", "Female", "Non-binary", "Prefer not to say"],
+        required: true
+      },
+      {
+        type: "multi-choice",
+        prompt: "What is your highest level of education completed?",
+        name: "education",
+        options: [
+          "High school",
+          "Some college/university",
+          "Undergraduate degree",
+          "Graduate degree",
+          "Prefer not to say"
+        ],
+        required: true
+      }
+    ]
+  ],
+  title: "Demographics",
+  button_label_next: "Continue",
+  button_label_back: "Back",
+  button_label_finish: "Continue",
+
+  on_finish: (data) => {
+    // Clean data
+    const resp = data.response || {};
+
+    // Store to Firebase under "demographics"
+    const ref = db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`);
+    ref.set({
+      age: resp.age || "",
+      gender: resp.gender || "",
+      education: resp.education || "",
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Instructions
 timeline.push({
   type:jsPsychInstructions,
