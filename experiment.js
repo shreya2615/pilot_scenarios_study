@@ -457,7 +457,8 @@ timeline.push({
       <p>Two companies are looking to hire a new <b>Chief Executive Officer (CEO)</b> and two companies are looking to hire a new <b>Early Childhood Educator (ECE)</b>.</p>
       <p>You will be presented with information about each company including the qualifications they are looking for in a new employee, and the profiles of three candidates applying for each position.</p>
       <p>Your job is to evaluate each candidate and indicate how likely you would be to recommend them for the position considering the companies’ requirements.</p>
-      <p>Press <b>SPACE</b> to begin.</p>
+      <p>You will first be presented with some demographic questions.</p>
+      <p>Press <b>SPACE</b> to begin the demographic questionnaire.</p>
     </div>
   `,
   choices:[' ']
