@@ -463,7 +463,7 @@ timeline.push({
   choices:[' ']
 });
 
-// --- DEMOGRAPHICS (age, gender, education) ---
+// --- DEMOGRAPHICS (age, gender, education, ethnicity, sexuality, employment, religion) ---
 timeline.push({
   type: jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -481,15 +481,83 @@ timeline.push({
         <select name="gender" id="demo_gender"
                 style="width:260px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
+          <option value="Man">Man</option>
+          <option value="Woman">Woman</option>
           <option value="Non-binary">Non-binary</option>
+          <option value="Another identity">Another identity</option>
           <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
       <p>
-        <label for="demo_edu"><b>3. What is your highest level of education completed?</b></label><br>
+        <label for="demo_ethnicity"><b>3. How would you describe your ethnicity?</b></label><br>
+        <select name="ethnicity" id="demo_ethnicity"
+                style="width:320px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="White">White</option>
+          <option value="Black">Black</option>
+          <option value="East Asian">East Asian</option>
+          <option value="South Asian">South Asian</option>
+          <option value="Southeast Asian">Southeast Asian</option>
+          <option value="Middle Eastern / North African">Middle Eastern / North African</option>
+          <option value="Indigenous">Indigenous</option>
+          <option value="Latinx">Latinx</option>
+          <option value="Mixed / Multiple">Mixed / Multiple</option>
+          <option value="Another ethnicity">Another ethnicity</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="demo_orientation"><b>4. How would you describe your sexual orientation?</b></label><br>
+        <select name="orientation" id="demo_orientation"
+                style="width:320px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="Heterosexual / straight">Heterosexual / straight</option>
+          <option value="Gay / lesbian">Gay / lesbian</option>
+          <option value="Bisexual">Bisexual</option>
+          <option value="Pansexual">Pansexual</option>
+          <option value="Asexual">Asexual</option>
+          <option value="Another orientation">Another orientation</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="demo_employment"><b>5. What is your current employment status?</b></label><br>
+        <select name="employment" id="demo_employment"
+                style="width:320px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="Employed full-time">Employed full-time</option>
+          <option value="Employed part-time">Employed part-time</option>
+          <option value="Self-employed">Self-employed</option>
+          <option value="Unemployed">Unemployed</option>
+          <option value="Student">Student</option>
+          <option value="Student and employed">Student and employed</option>
+          <option value="Other">Other</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="demo_religion"><b>6. What is your current religious or spiritual affiliation?</b></label><br>
+        <select name="religion" id="demo_religion"
+                style="width:320px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="None / atheist / agnostic">None / atheist / agnostic</option>
+          <option value="Christian">Christian</option>
+          <option value="Muslim">Muslim</option>
+          <option value="Jewish">Jewish</option>
+          <option value="Hindu">Hindu</option>
+          <option value="Buddhist">Buddhist</option>
+          <option value="Sikh">Sikh</option>
+          <option value="Another religion / spirituality">Another religion / spirituality</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="demo_edu"><b>7. What is your highest level of education completed?</b></label><br>
         <select name="education" id="demo_edu"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -501,28 +569,36 @@ timeline.push({
         </select>
       </p>
 
-      <div style="text-align:center; margin-top:20px;">
+      <div style="text-align:center; margin-top:24px;">
         <button id="demo_continue" class="jspsych-btn">Continue</button>
       </div>
     </div>
   `,
-  choices: "NO_KEYS",   // we end the trial manually, not with a keypress
+  choices: "NO_KEYS",
 
   on_load: () => {
     const btn = document.getElementById('demo_continue');
     if (!btn) return;
 
     btn.addEventListener('click', () => {
-      const ageEl = document.getElementById('demo_age');
-      const genderEl = document.getElementById('demo_gender');
-      const eduEl = document.getElementById('demo_edu');
+      const ageEl        = document.getElementById('demo_age');
+      const genderEl     = document.getElementById('demo_gender');
+      const ethEl        = document.getElementById('demo_ethnicity');
+      const orientEl     = document.getElementById('demo_orientation');
+      const empEl        = document.getElementById('demo_employment');
+      const religionEl   = document.getElementById('demo_religion');
+      const eduEl        = document.getElementById('demo_edu');
 
-      const age = ageEl ? String(ageEl.value).trim() : "";
-      const gender = genderEl ? genderEl.value : "";
-      const education = eduEl ? eduEl.value : "";
+      const age          = ageEl ? String(ageEl.value).trim() : "";
+      const gender       = genderEl ? genderEl.value : "";
+      const ethnicity    = ethEl ? ethEl.value : "";
+      const orientation  = orientEl ? orientEl.value : "";
+      const employment   = empEl ? empEl.value : "";
+      const religion     = religionEl ? religionEl.value : "";
+      const education    = eduEl ? eduEl.value : "";
 
-      // simple validation
-      if (!age || !gender || !education) {
+      // Simple "all required" check
+      if (!age || !gender || !ethnicity || !orientation || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
       }
@@ -532,18 +608,25 @@ timeline.push({
         participant_id: PARTICIPANT_ID,
         age,
         gender,
+        ethnicity,
+        orientation,
+        employment,
+        religion,
         education
       };
 
-      // save to Firebase under this participant
+      // Save demographics to Firebase in one node
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
         age,
         gender,
+        ethnicity,
+        orientation,
+        employment,
+        religion,
         education,
         timestamp: new Date().toISOString()
       });
 
-      // finish jsPsych trial with these values in the data
       jsPsych.finishTrial(demoData);
     });
   }
