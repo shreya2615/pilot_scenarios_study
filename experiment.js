@@ -454,10 +454,16 @@ timeline.push({
   stimulus: `
     <div style="max-width:900px; margin:40px auto; font-size:16px;">
 
+      <!-- HEADER -->
       <h2 style="text-align:center; margin-bottom:20px;"><b>Informed Consent</b></h2>
-      <h3 style="text-align:center; margin-top:-10px; margin-bottom:25px;">
+
+      <h3 style="text-align:center; margin-top:-10px; margin-bottom:8px;">
         Study Name: Cognitive Studies of Human Problem Solving and Reasoning
       </h3>
+
+      <p style="text-align:center; margin-top:0; margin-bottom:25px; font-size:15px; color:#444;">
+        Please scroll to the bottom of the document to enable the consent buttons.
+      </p>
 
       <!-- SCROLL BOX -->
       <div id="consent_scrollbox" style="
@@ -468,7 +474,6 @@ timeline.push({
         border-radius:6px;
         background:white;
       ">
-        <!-- (YOUR CONSENT TEXT UNCHANGED) -->
         <p><b>Researchers:</b><br>
         Eshnaa Aujla, graduate student (eshnaa15@yorku.ca)<br>
         Shreya Sharma, graduate student (ssharm29@yorku.ca)<br>
@@ -476,28 +481,31 @@ timeline.push({
 
         <p>We invite you to take part in this research study. Please read this document and discuss any questions or concerns that you may have with the Investigator.</p>
 
-        <p><b>Purpose of the Research:</b> This project investigates the cognitive structures and processes underlying human reasoning & problem-solving abilities...</p>
+        <p><b>Purpose of the Research:</b> This project investigates the cognitive structures and processes underlying human reasoning & problem-solving abilities. The tasks vary between conditions but all involve attending to linguistic or visual stimuli and making a perceptual or cognitive judgment, usually on a computer screen.</p>
 
-        <p><b>What You Will Be Asked to Do:</b> You will be asked to complete a self questionnaire...</p>
+        <p><b>What You Will Be Asked to Do:</b> You will be asked to complete a self questionnaire. After viewing images or audios, you will be asked for your opinions.</p>
 
-        <p><b>Risks and Discomforts:</b> We do not foresee any risks...</p>
+        <p><b>Risks and Discomforts:</b> We do not foresee any risks or discomfort from your participation in the research. You may, however, experience some frustration or stress if you believe that you are not doing well. Certain participants may have difficulty with some of the tasks. If you do feel discomfort you may withdraw at any time.</p>
 
-        <p><b>Benefits:</b> There is no direct benefit...</p>
+        <p><b>Benefits:</b> There is no direct benefit to you, but knowledge may be gained that may help others in the future. The study takes approximately 35–45 minutes to complete, and you will receive $7.50 USD upon completion. Compensation is available even if participants withdraw.</p>
 
-        <p><b>Voluntary Participation:</b> Your participation is voluntary...</p>
+        <p><b>Voluntary Participation:</b> Your participation is entirely voluntary and you may choose to stop participating at any time. Your decision will not affect your relationship with the researcher, study staff, or York University.</p>
 
-        <p><b>Withdrawal:</b> You may withdraw at any time...</p>
+        <p><b>Withdrawal:</b> You may withdraw at any time, and still receive compensation. If you withdraw, all associated data will be destroyed immediately.</p>
 
-        <p><b>Secondary Use of Data:</b> De-identified data may be used in future research...</p>
+        <p><b>Secondary Use of Data:</b> De-identified data may be used in later related studies by the research team, but only in anonymous form and only following ethics review.</p>
 
-        <p><b>Confidentiality:</b> Your data will be anonymous...</p>
+        <p><b>Confidentiality:</b> All data will be collected anonymously. Data will be stored in a secure online system accessible only to the research team. Confidentiality cannot be guaranteed during internet transmission.</p>
 
-        <p><b>Questions?</b> Contact Dr. Vinod Goel...</p>
+        <p>Your data may be deposited in a publicly accessible scientific repository in fully anonymized form. No identifying information will be included.</p>
+
+        <p><b>Questions?</b> For questions about the study, contact Dr. Vinod Goel, Eshnaa Aujla, or Shreya Sharma. For questions about your rights, contact York University's Office of Research Ethics at ore@yorku.ca.</p>
 
         <p><b>Legal Rights and Signatures:</b><br>
-        By selecting “I consent to participate,” you acknowledge that you have read and understood the conditions of the study.</p>
+        By selecting “I consent to participate,” you indicate that you have read and understood the information above and agree to participate voluntarily.</p>
       </div>
 
+      <!-- BUTTONS -->
       <div style="text-align:center; margin-top:25px;">
         <button id="consent_yes" class="jspsych-btn" disabled style="opacity:0.5; margin-right:20px;">
           I consent to participate
@@ -508,7 +516,7 @@ timeline.push({
         </button>
 
         <p id="scroll_notice" style="margin-top:10px; font-size:14px; color:#555;">
-          Please scroll to the bottom of the consent form to enable the buttons.
+          Please scroll to the bottom to enable the buttons.
         </p>
       </div>
     </div>
@@ -521,7 +529,6 @@ timeline.push({
     const notice = document.getElementById("scroll_notice");
     const box    = document.getElementById("consent_scrollbox");
 
-    // Function to check scroll position
     function checkScroll() {
       const atBottom =
         box.scrollTop + box.clientHeight >= box.scrollHeight - 5;
@@ -535,10 +542,8 @@ timeline.push({
       }
     }
 
-    // Attach scroll listener
     box.addEventListener("scroll", checkScroll);
 
-    // HANDLE CONSENT YES
     yesBtn.onclick = () => {
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/consent`).set({
         consent: "yes",
@@ -547,7 +552,6 @@ timeline.push({
       jsPsych.finishTrial({ consent: "yes" });
     };
 
-    // HANDLE CONSENT NO
     noBtn.onclick = () => {
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/consent`).set({
         consent: "no",
