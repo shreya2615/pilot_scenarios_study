@@ -454,7 +454,7 @@ timeline.push({
   stimulus: `
     <div style="max-width:900px; margin:40px auto; font-size:16px;">
 
-      <h2 style="text-align:center; margin-bottom:20px;"><b>Informed Consent</b></h2>
+      <h2 style="text-align:center; margin-bottom:20px;"><b>Informed Consent: Please scroll through the entire document before submitting consent.</b></h2>
       <h3 style="text-align:center; margin-top:-10px; margin-bottom:25px;">
         Study Name: Cognitive Studies of Human Problem Solving and Reasoning
       </h3>
