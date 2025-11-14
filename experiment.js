@@ -180,7 +180,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
        - Scenario paragraph slightly greyed on ALL candidate pages
        - On AUDIO pages: candidate NAME black, BIO grey; on IMAGE pages both black
     */
-    const scenarioTextStyle = 'color: rgba(0,0,0,0.75);';  // subtle grey
+    const scenarioTextStyle = 'color: rgba(0,0,0,0.70);';  // subtle grey
     const isAudio = modality === 'audio';
     const nameStyle = isAudio ? 'color:#000;' : '';           // force black name on audio pages
     const bioStyle  = isAudio ? 'color:#6b7280;' : '';        // grey bio ONLY on audio pages
