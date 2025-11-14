@@ -355,7 +355,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         text-align:center;
       ">
         <p style="font-size:32px; margin:0 0 12px 0;">
-          <b>You will now be presented with the ${ordinalWord(scenarioNumber)}scenario<b>.
+          <b>You will now be presented with the ${ordinalWord(scenarioNumber)} scenario<b>.
         </p>
         <p style="font-size:22px; margin:0;">
           Press <b>SPACE</b> to see the scenario.
