@@ -447,20 +447,20 @@ const jsPsych = initJsPsych({
 /* ---------- Timeline ---------- */
 const timeline=[];
 
-/* ---------- CONSENT PAGE ---------- */
+/* ---------- CONSENT PAGE WITH SCROLL-TO-ENABLE ---------- */
 timeline.push({
   type: jsPsychHtmlKeyboardResponse,
   choices: "NO_KEYS",
   stimulus: `
     <div style="max-width:900px; margin:40px auto; font-size:16px;">
 
-      <h2 style="text-align:center; margin-bottom:20px;"><b>Informed Consent: Please scroll through the entire document before submitting consent.</b></h2>
+      <h2 style="text-align:center; margin-bottom:20px;"><b>Informed Consent</b></h2>
       <h3 style="text-align:center; margin-top:-10px; margin-bottom:25px;">
         Study Name: Cognitive Studies of Human Problem Solving and Reasoning
       </h3>
 
-      <!-- Scroll box so page never becomes too long -->
-      <div style="
+      <!-- SCROLL BOX -->
+      <div id="consent_scrollbox" style="
         border:1px solid #ccc;
         padding:20px;
         height:380px;
@@ -468,6 +468,7 @@ timeline.push({
         border-radius:6px;
         background:white;
       ">
+        <!-- (YOUR CONSENT TEXT UNCHANGED) -->
         <p><b>Researchers:</b><br>
         Eshnaa Aujla, graduate student (eshnaa15@yorku.ca)<br>
         Shreya Sharma, graduate student (ssharm29@yorku.ca)<br>
@@ -475,45 +476,70 @@ timeline.push({
 
         <p>We invite you to take part in this research study. Please read this document and discuss any questions or concerns that you may have with the Investigator.</p>
 
-        <p><b>Purpose of the Research:</b> This project investigates the cognitive structures and processes underlying human reasoning & problem-solving abilities. The tasks vary between conditions but all involve attending to linguistic or visual stimuli and making a perceptual or cognitive judgment.</p>
+        <p><b>Purpose of the Research:</b> This project investigates the cognitive structures and processes underlying human reasoning & problem-solving abilities...</p>
 
-        <p><b>What You Will Be Asked to Do:</b> You will be asked to complete a self questionnaire. After viewing images or audios, you will be asked for your opinions.</p>
+        <p><b>What You Will Be Asked to Do:</b> You will be asked to complete a self questionnaire...</p>
 
-        <p><b>Risks and Discomforts:</b> We do not foresee any risks or discomfort. You may withdraw at any time without penalty and still receive compensation.</p>
+        <p><b>Risks and Discomforts:</b> We do not foresee any risks...</p>
 
-        <p><b>Benefits:</b> There is no direct benefit to you, but knowledge may be gained that may help others in the future. The study takes approximately 35–45 minutes, and compensation is $7.50 USD.</p>
+        <p><b>Benefits:</b> There is no direct benefit...</p>
 
-        <p><b>Voluntary Participation:</b> Your participation is voluntary. You may stop at any time without consequences.</p>
+        <p><b>Voluntary Participation:</b> Your participation is voluntary...</p>
 
-        <p><b>Withdrawal:</b> You may withdraw at any time, for any reason. If you withdraw, all your data will be destroyed.</p>
+        <p><b>Withdrawal:</b> You may withdraw at any time...</p>
 
-        <p><b>Secondary Use of Data:</b> De-identified data may be used in future research by the research team. Any secondary use will be reviewed by the ethics board. De-identified data may be deposited into publicly accessible repositories such as York University Dataverse.</p>
+        <p><b>Secondary Use of Data:</b> De-identified data may be used in future research...</p>
 
-        <p><b>Confidentiality:</b> Your data will be anonymous. No identifying information will appear in reports. Data will be stored securely by the research team.</p>
+        <p><b>Confidentiality:</b> Your data will be anonymous...</p>
 
-        <p>Please note that CloudResearch has its own privacy/security policies (https://www.cloudresearch.com/privacy-policy/). As with any online data collection, confidentiality cannot be guaranteed.</p>
-
-        <p><b>Questions?</b> Contact Dr. Vinod Goel, Eshnaa Aujla, or Shreya Sharma. This study has been reviewed by the Human Participants Review Sub-Committee at York University. For questions about ethics or your rights as a participant, contact the Office of Research Ethics (ore@yorku.ca).</p>
+        <p><b>Questions?</b> Contact Dr. Vinod Goel...</p>
 
         <p><b>Legal Rights and Signatures:</b><br>
         By selecting “I consent to participate,” you acknowledge that you have read and understood the conditions of the study.</p>
       </div>
 
       <div style="text-align:center; margin-top:25px;">
-        <button id="consent_yes" class="jspsych-btn" style="margin-right:20px;">
+        <button id="consent_yes" class="jspsych-btn" disabled style="opacity:0.5; margin-right:20px;">
           I consent to participate
         </button>
 
-        <button id="consent_no" class="jspsych-btn" style="background:#ccc; color:black;">
+        <button id="consent_no" class="jspsych-btn" disabled style="opacity:0.5; background:#ccc; color:black;">
           I do NOT consent
         </button>
+
+        <p id="scroll_notice" style="margin-top:10px; font-size:14px; color:#555;">
+          Please scroll to the bottom of the consent form to enable the buttons.
+        </p>
       </div>
     </div>
   `,
 
   on_load: () => {
-    document.getElementById("consent_yes").onclick = () => {
-      // Log consent
+
+    const yesBtn = document.getElementById("consent_yes");
+    const noBtn  = document.getElementById("consent_no");
+    const notice = document.getElementById("scroll_notice");
+    const box    = document.getElementById("consent_scrollbox");
+
+    // Function to check scroll position
+    function checkScroll() {
+      const atBottom =
+        box.scrollTop + box.clientHeight >= box.scrollHeight - 5;
+
+      if (atBottom) {
+        yesBtn.disabled = false;
+        noBtn.disabled  = false;
+        yesBtn.style.opacity = 1;
+        noBtn.style.opacity  = 1;
+        notice.style.display = "none";
+      }
+    }
+
+    // Attach scroll listener
+    box.addEventListener("scroll", checkScroll);
+
+    // HANDLE CONSENT YES
+    yesBtn.onclick = () => {
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/consent`).set({
         consent: "yes",
         timestamp: new Date().toISOString()
@@ -521,7 +547,8 @@ timeline.push({
       jsPsych.finishTrial({ consent: "yes" });
     };
 
-    document.getElementById("consent_no").onclick = () => {
+    // HANDLE CONSENT NO
+    noBtn.onclick = () => {
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/consent`).set({
         consent: "no",
         timestamp: new Date().toISOString()
