@@ -463,6 +463,72 @@ timeline.push({
   choices:[' ']
 });
 
+// --- DEMOGRAPHICS (age, gender, education) ---
+timeline.push({
+  type: jsPsychSurveyHtmlForm,
+  preamble: `<h3 style="text-align:center;">Demographic Questions</h3>`,
+  html: `
+    <div style="max-width:700px; margin:0 auto; font-size:16px;">
+      <p>
+        <label for="age"><b>1. What is your age?</b></label><br>
+        <input name="age" id="age" type="number" min="18" max="99" required
+               style="width:120px; padding:4px; margin-top:4px;">
+      </p>
+
+      <p>
+        <label for="gender"><b>2. What is your gender?</b></label><br>
+        <select name="gender" id="gender" required
+                style="width:260px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Non-binary">Non-binary</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="education"><b>3. What is your highest level of education completed?</b></label><br>
+        <select name="education" id="education" required
+                style="width:320px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="High school">High school</option>
+          <option value="Some college/university">Some college/university</option>
+          <option value="Undergraduate degree">Undergraduate degree</option>
+          <option value="Graduate degree">Graduate degree</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+    </div>
+  `,
+  button_label: "Continue",
+
+  on_finish: (data) => {
+    // Get responses in a safe way
+    let resp = {};
+    if (data.response && typeof data.response === 'object') {
+      resp = data.response;
+    } else if (data.responses) {
+      try {
+        resp = JSON.parse(data.responses);
+      } catch (e) {
+        resp = {};
+      }
+    }
+
+    // Save to Firebase under this participant
+    const ref = db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`);
+    ref.set({
+      age: resp.age || "",
+      gender: resp.gender || "",
+      education: resp.education || "",
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+
+
 // Instructions
 timeline.push({
   type:jsPsychInstructions,
