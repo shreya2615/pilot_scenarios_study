@@ -1,52 +1,50 @@
+
 /****************************************************
  * Pilot Scenarios Study (interleaved image + audio)
- * PRESENTATION TWEAKS ONLY:
+ * PRESENTATION TWEAKS:
  * - Centered welcome + instructions; bold key lines
  * - Preface (scenario-only) centered; bold scenario title
- * - Candidate pages header = "Scenario 1..4" (no Bio+Face/Audio label)
- * - NEW: Scenario announcement screen before each scenario
- * - NEW: 1s fixation cross between candidates
+ * - Announcement screen before each scenario
+ * - 1s fixation (+) between every candidate
+ * - Audio pages: gray bio + note that bio matches audio; name stays black
+ * - Candidate pages tightened; minimal scrolling
  *
  * CORE LOGIC:
  * - Each candidate shown on its own page
- * - Variant (1..3) fixed per participant across ALL stimuli
- * - Images: candidate↔face index randomized per scenario (1..3)
- * - Audio: FIXED mapping by scenario + candidate:
- *      A-scenarios → voices 1..3 (C1→1, C2→2, C3→3)
- *      B-scenarios → voices 4..6 (C1→4, C2→5, C3→6)
- * - Every participant sees all FOUR scenarios:
+ * - IMAGES: candidate↔face index randomized per scenario (1..3)
+ * - AUDIO: FIXED voice index by scenario+candidate (A:1..3, B:4..6)
+ * - Image & audio VARIANT/PITCH RANDOMIZED PER CANDIDATE (1..3)
+ * - Each participant sees all FOUR scenarios:
  *      • One CEO + One ECE as IMAGES
  *      • The other CEO + ECE as AUDIOS
- * - Balanced per-participant modality assignment (random A/B within CEO & ECE)
- * - Optional audio gating (must play full / min seconds / free)
- * - White background, black text
+ * - Balanced, random per participant modality within CEO & within ECE
+ * - Firebase logging includes actual per-trial variant used
  ****************************************************/
 /* global firebase, jsPsych, jsPsychHtmlKeyboardResponse, jsPsychSurveyLikert, jsPsychInstructions, jsPsychPreload */
 
-/* ---------- Participant & variant ---------- */
+/* ---------- Participant ID ---------- */
 const urlParams = new URLSearchParams(window.location.search);
 const PARTICIPANT_ID = urlParams.get('PID') || `P${Math.floor(Math.random() * 1e9)}`;
 function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h|=0; } return Math.abs(h); }
-const VARIANT = (simpleHash(PARTICIPANT_ID) % 3) + 1; // 1..3
 
 /* ---------- Config ---------- */
-const RANDOMIZE_DISPLAY_ORDER = true; // randomize candidate presentation order within each scenario
+const RANDOMIZE_DISPLAY_ORDER = true;
 
 /* ---------- Audio presentation policy ---------- */
 const AUDIO_PRESENTATION = {
   mode: 'must_play_full',  // 'must_play_full' | 'min_seconds' | 'free'
-  minSeconds: 6,           // used when mode === 'min_seconds'
-  blockSeeking: true,      // prevent skipping ahead
-  showGateHint: true       // show a short hint until unlocked
+  minSeconds: 6,
+  blockSeeking: true,
+  showGateHint: true
 };
 
 /* ---------- Paths ---------- */
 function facePath(gender, faceIndex, variant){
-  const faceNum = String(faceIndex).padStart(2,'0'); // 1..3 → 01..03
+  const faceNum = String(faceIndex).padStart(2,'0');
   return `assets/faces/${gender}/face${faceNum}_var${variant}.png`;
 }
 function audioPath(gender, voiceIndex, variant){
-  const voiceNum = String(voiceIndex).padStart(2,'0'); // 1..6 → 01..06
+  const voiceNum = String(voiceIndex).padStart(2,'0');
   return `assets/audios/${gender}/voice${voiceNum}_var${variant}.wav`;
 }
 
@@ -54,32 +52,19 @@ function audioPath(gender, voiceIndex, variant){
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 function ordinalWord(n){ return (['first','second','third','fourth'][n-1]) || `${n}th`; }
+function randVariant(){ return Math.floor(Math.random()*3)+1; } // 1..3
 
-/* ---------- COMPACT CSS (applies ONLY when body has .compact-trial) ---------- */
+/* ---------- COMPACT CSS (only on candidate pages) ---------- */
 (function injectCompactCssOnce(){
   if (document.getElementById('compact-trial-css')) return;
   const css = `
-    /* ——— Compact layout used ONLY on candidate pages ——— */
-    body.compact-trial #jspsych-content {
-      padding-top: 10px !important;
-      margin-top: 0 !important;
-    }
-    body.compact-trial .jspsych-content-wrapper {
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-    }
-    body.compact-trial .candidate-block > :first-child {
-      margin-top: 0 !important;
-      padding-top: 0 !important;
-    }
-    body.compact-trial .candidate-block h3 {
-      margin: 0 0 6px 0 !important;     /* no space above "Scenario X" */
-      line-height: 1.22;
-    }
-    /* Tight baseline spacing */
+    body.compact-trial #jspsych-content { padding-top: 10px !important; margin-top: 0 !important; }
+    body.compact-trial .jspsych-content-wrapper { padding-top: 0 !important; margin-top: 0 !important; }
+    body.compact-trial .candidate-block > :first-child { margin-top: 0 !important; padding-top: 0 !important; }
+    body.compact-trial .candidate-block h3 { margin: 0 0 6px 0 !important; line-height: 1.22; }
     body.compact-trial .candidate-block p { margin: 6px 0; line-height: 1.28; }
-    body.compact-trial .candidate-block img { max-width: 220px; height: auto; margin: 4px 0; }
-    body.compact-trial .candidate-block audio { width: 100%; max-width: 520px; margin: 4px 0; }
+    body.compact-trial .candidate-block img { max-width: 240px; height: auto; margin: 4px 0; }
+    body.compact-trial .candidate-block audio { width: 100%; max-width: 540px; margin: 4px 0; }
     body.compact-trial .jspsych-survey-likert-question { margin: 6px 0 !important; }
     body.compact-trial .jspsych-survey-likert-statement { margin-bottom: 6px !important; }
     body.compact-trial .jspsych-survey-likert-opts { margin: 4px 0 !important; }
@@ -91,7 +76,7 @@ function ordinalWord(n){ return (['first','second','third','fourth'][n-1]) || `$
   document.head.appendChild(el);
 })();
 
-/* ---------- Content (edit as needed) ---------- */
+/* ---------- Content ---------- */
 const CEO_SCENARIOS = [
   {id:'CEO_A',title:'NovaLink',text:`NovaLink is a Canadian tech firm, with a team of 5000 employees, that builds smart software to help companies manage their supply chains. We’ve grown across North America and are now preparing to expand into Europe. At the same time, we’re dealing with a hostile takeover attempt from a U.S. competitor. We want to remain independent and grow internationally, without losing our focus or team stability. We are looking for a new CEO to help navigate these challenges and opportunities.`},
   {id:'CEO_B',title:'GreenPath',text:`GreenPath develops software to help other companies track and reduce their environmental impact in Canada and Europe. We’ve grown quickly to a team of 500, but that growth has created new pressures. We’ve fallen behind in updating our tools and platforms to keep up with new climate regulations, particularly in Europe.  Furthermore, our switch back from remote to in-office mode after the COVID lockdowns has left some staff dissatisfied and unheard. We now want to consolidate and focus on doing two things better: staying ahead of environmental standards and making GreenPath a more connected and desirable place to work. We are looking for a new CEO to help us achieve these goals.`}
@@ -144,8 +129,6 @@ function audioIndexFor(scenarioId, candId){
 }
 
 /* ---------- Core trial builder ---------- */
-// MODALITY: 'image' | 'audio'; scenarioNumber labels pages as "Scenario 1..4"
-// Adds: scenario announcement page, and 1s fixation between candidates
 function buildCandidateTrials(scenario, modality, scenarioNumber) {
   const isCEO = scenario.id.startsWith('CEO');
   const gender = isCEO ? 'male' : 'female';
@@ -158,8 +141,11 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
   const trials = bios.map((cand) => {
     const idx = (modality === 'image')
-      ? candToIdxImage[cand.id]                   // randomized 1..3
-      : audioIndexFor(scenario.id, cand.id);      // fixed 1..3 or 4..6
+      ? candToIdxImage[cand.id]
+      : audioIndexFor(scenario.id, cand.id);
+
+    // Random variant (1..3) per trial
+    const useVariant = randVariant();
 
     // unique id for audio DOM hooks (for gating)
     const audioId = `aud_${scenario.id}_${cand.id}_${Date.now()}_${Math.floor(Math.random()*1e6)}`;
@@ -169,12 +155,12 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     let phase = '';
 
     if (modality === 'image') {
-      const img = facePath(gender, idx, VARIANT);
+      const img = facePath(gender, idx, useVariant);
       stimHTML = `<img src="${img}" alt="Candidate face" style="display:block;margin:4px auto;max-width:240px;height:auto;">`;
       loggedFile = img;
       phase = 'bio_plus_face';
     } else {
-      const aud = audioPath(gender, idx, VARIANT);
+      const aud = audioPath(gender, idx, useVariant);
       const controlsList = `controlsList="nodownload noplaybackrate"`;
       stimHTML = `<audio id="${audioId}" src="${aud}" controls preload="auto" ${controlsList} style="display:block;margin:4px auto;width:100%;max-width:540px;"></audio>
                   <p style="margin:6px 0 0 0; font-size:0.95rem; font-style:italic; opacity:0.9;">
@@ -190,22 +176,30 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
          </p>`
       : ``;
 
-    // Bio color: gray only for audio pages
-    const bioColor = (modality === 'audio') ? 'color:#6b7280;' : '';
+    /* New styles:
+       - Scenario paragraph slightly greyed on ALL candidate pages
+       - On AUDIO pages: candidate NAME black, BIO grey; on IMAGE pages both black
+    */
+    const scenarioTextStyle = 'color: rgba(0,0,0,0.75);';  // subtle grey
+    const isAudio = modality === 'audio';
+    const nameStyle = isAudio ? 'color:#000;' : '';           // force black name on audio pages
+    const bioStyle  = isAudio ? 'color:#6b7280;' : '';        // grey bio ONLY on audio pages
 
-     const prompt = `
-  <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
-    <h3 style="margin:0; padding-top:0;"><b>${scenario.title}</b></h3>
-    <p style="margin:6px 0 20px 0;">${scenario.text}</p>
-    <div style="margin-bottom:22px;">${stimHTML}</div>
-    <p style="margin:8px 0 26px 0; ${bioColor}"><b>${cand.name}</b><br>${cand.bio}</p>
-    <p style="margin:18px 0 10px 0;">
-      <b>How likely would you be to recommend this candidate?</b> (1=Not at all, 7=Extremely likely)
-    </p>
-    ${gateHint}
-  </div>
-`;
-
+    const prompt = `
+      <div class="candidate-block" style="text-align:center; max-width:900px; margin:0 auto;">
+        <h3 style="margin:0; padding-top:0;"><b>${scenario.title}</b></h3>
+        <p style="margin:6px 0 20px 0; ${scenarioTextStyle}">${scenario.text}</p>
+        <div style="margin-bottom:22px;">${stimHTML}</div>
+        <p style="margin:8px 0 26px 0;">
+          <b style="${nameStyle}">${cand.name}</b><br>
+          <span style="${bioStyle}">${cand.bio}</span>
+        </p>
+        <p style="margin:18px 0 10px 0;">
+          <b>How likely would you be to recommend this candidate?</b> (1=Not at all, 7=Extremely likely)
+        </p>
+        ${gateHint}
+      </div>
+    `;
 
     return {
       type: jsPsychSurveyLikert,
@@ -218,10 +212,8 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
       }],
       button_label: 'Continue',
 
-      /* Only candidate pages get compact layout */
       on_start: () => { document.body.classList.add('compact-trial'); },
 
-      /* Gate audio playback if configured */
       on_load: () => {
         if (modality !== 'audio') return;
         if (AUDIO_PRESENTATION.mode === 'free') return;
@@ -244,7 +236,6 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
         lockUI();
 
-        // Block seeking ahead (optional)
         let maxListened = 0;
         if (AUDIO_PRESENTATION.blockSeeking) {
           audioEl.addEventListener('timeupdate', () => {
@@ -256,7 +247,6 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
           });
         }
 
-        // Unlock criteria
         if (AUDIO_PRESENTATION.mode === 'must_play_full') {
           audioEl.addEventListener('ended', unlockUI, { once: true });
         } else if (AUDIO_PRESENTATION.mode === 'min_seconds') {
@@ -275,21 +265,20 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         trial_type: phase,
         scenario_id: scenario.id,
         scenario_kind: isCEO ? 'CEO' : 'ECE',
-        variant: VARIANT,
         participant_id: PARTICIPANT_ID,
         candidate_id: cand.id,
         stimulus_file: loggedFile,
-        modality
+        modality,
+        variant_used: useVariant
       },
       on_finish: (data) => {
-        // Remove compact class so other pages stay unchanged
         document.body.classList.remove('compact-trial');
 
         const resp = (data.response && typeof data.response === 'object')
           ? data.response
           : (data.responses ? JSON.parse(data.responses) : {});
         const key = Object.keys(resp)[0];
-        const rating = Number(resp[key]) + 1; // 0..6 -> 1..7
+        const rating = Number(resp[key]) + 1;
 
         data.row_expanded = [{
           participant_id: PARTICIPANT_ID,
@@ -297,7 +286,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
           scenario_kind: isCEO ? 'CEO' : 'ECE',
           phase,
           candidate_id: cand.id,
-          variant: VARIANT,
+          variant: data.variant_used,
           rating,
           face_file: (modality === 'image') ? loggedFile : '',
           audio_file: (modality === 'audio') ? loggedFile : '',
@@ -307,7 +296,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     };
   });
 
-  /* --- 1s fixation cross between candidates --- */
+  // 1s fixation between candidates
   const interleaved = [];
   trials.forEach((t, i) => {
     interleaved.push(t);
@@ -320,13 +309,13 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
           </div>
         `,
         choices: "NO_KEYS",
-        trial_duration: 1000,   // 1 second
+        trial_duration: 1000,
         data: { trial_type: 'candidate_ISI', scenario_id: scenario.id }
       });
     }
   });
 
-  /* Preface centered; scenario title bold (not compact) */
+  // Preface
   const preface = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `<div style="text-align:center; max-width:900px; margin:0 auto;">
@@ -338,7 +327,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     data:{trial_type:'preface',scenario_id:scenario.id,scenario_kind:isCEO?'CEO':'ECE',modality}
   };
 
-  /* --- Scenario announcement screen (centered, large text) --- */
+  // Announcement
   const announce = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `
@@ -351,7 +340,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         text-align:center;
       ">
         <p style="font-size:32px; margin:0 0 12px 0;">
-          <b>You will now be presented with the ${ordinalWord(scenarioNumber)} scenario.</b>
+          <b>You will now be presented with the ${ordinalWord(scenarioNumber)}</b> scenario.
         </p>
         <p style="font-size:22px; margin:0;">
           Press <b>SPACE</b> to see the scenario.
@@ -362,11 +351,10 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
     data: { trial_type:'scenario_announce', scenario_id: scenario.id, scenario_number: scenarioNumber }
   };
 
-  // ✅ Return the full set for this scenario
   return [announce, preface, ...interleaved];
-} // <-- closes buildCandidateTrials
+}
 
-/* ---------- Firebase Logging Setup ---------- */
+/* ---------- Firebase ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBJyjpK1xMQ-ecPUhutv3ulYNHwGY4yolg",
   authDomain: "pilot-scenarios-study.firebaseapp.com",
@@ -377,7 +365,6 @@ const firebaseConfig = {
   appId: "1:163355880471:web:cf065b691f494e482f4052",
   measurementId: "G-50KQJ9334C"
 };
-// Initialize Firebase (compat builds)
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -392,17 +379,13 @@ const jsPsych = initJsPsych({
   on_finish: async () => {
     const flat = [];
     jsPsych.data.get().values().forEach(tr => {
-      if (Array.isArray(tr.row_expanded)) {
-        tr.row_expanded.forEach(r => flat.push(r));
-      }
+      if (Array.isArray(tr.row_expanded)) tr.row_expanded.forEach(r => flat.push(r));
     });
 
-    // --- FIREBASE SAVE ---
     try {
       if (flat.length === 0) {
         await db.ref('pilot_scenarios/' + PARTICIPANT_ID).set({
           participant_id: PARTICIPANT_ID,
-          variant: VARIANT,
           completed: true,
           timestamp: new Date().toISOString()
         });
@@ -449,7 +432,7 @@ const jsPsych = initJsPsych({
 /* ---------- Timeline ---------- */
 const timeline=[];
 
-// Welcome screen
+// Welcome
 timeline.push({
   type:jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -473,9 +456,8 @@ timeline.push({
        <h3><b>Instructions</b></h3>
        <p>You will see <b>four different scenarios</b> of companies looking to hire an employee, each with certain qualifications they are looking for. Alongside each hiring scenario, three job applicants will be presented. Each applicant’s profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their application.</p>
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
-       <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend for hiring</b> and <b>7</b> being <b>very likely to recommend for hiring</b>.</p>
-       <p>Images or audios will be presented at random for each scenario.</p>
-       <p>If you wish to stop at any point, please simply close the window and your responses will not be recorded.</p>
+       <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend</b> and <b>7</b> being <b>very likely to recommend</b>.</p>
+       <p>Images or audios are assigned per scenario, and the visual/audio <b>variant</b> is randomized for each candidate.</p>
        <p>Please press <b>NEXT</b> to proceed.</p>
      </div>`
   ],
@@ -488,7 +470,7 @@ const ALL_SCENARIOS = [
   ...ECE_SCENARIOS.map(s => ({...s, kind:'ECE'}))
 ];
 
-// Balanced modality assignment (random per participant; ensures 1 CEO + 1 ECE as image, and the other 1 CEO + 1 ECE as audio)
+// Balanced modality per participant
 function pickModalityPair(ids) {
   const arr = shuffle([...ids]);
   const m = {};
@@ -504,24 +486,32 @@ const SCENARIO_MODALITY = {
 // Random order of the 4 scenarios
 const SCENARIO_ORDER = shuffle(ALL_SCENARIOS);
 
-// Preload: images use 1..3; audio uses 1..3 for A, 4..6 for B
+// Preload ALL assets needed (faces 1..3 × var 1..3; voices A:1..3/B:4..6 × var 1..3)
 const preloadImages = [];
 const preloadAudio = [];
 SCENARIO_ORDER.forEach(scn=>{
   const gender = scn.kind === 'CEO' ? 'male' : 'female';
   const modality = SCENARIO_MODALITY[scn.id];
   if (modality === 'image') {
-    for(let i=1;i<=3;i++){ preloadImages.push(facePath(gender,i,VARIANT)); }
+    for(let i=1;i<=3;i++){
+      for(let v=1; v<=3; v++){
+        preloadImages.push(facePath(gender,i,v));
+      }
+    }
   } else {
     const isA = /_A$/.test(scn.id);
     const start = isA ? 1 : 4;
     const end = isA ? 3 : 6;
-    for(let v=start; v<=end; v++){ preloadAudio.push(audioPath(gender,v,VARIANT)); }
+    for(let voice=start; voice<=end; voice++){
+      for(let v=1; v<=3; v++){
+        preloadAudio.push(audioPath(gender,voice,v));
+      }
+    }
   }
 });
 timeline.push({ type: jsPsychPreload, images: preloadImages, audio: preloadAudio });
 
-// Build scenarios (candidate pages are compact; order randomized; audio mapping fixed)
+// Build scenarios
 SCENARIO_ORDER.forEach((scn, idx) => {
   const modality = SCENARIO_MODALITY[scn.id];
   timeline.push(...buildCandidateTrials(scn, modality, idx + 1));
