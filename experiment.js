@@ -1,4 +1,3 @@
-
 /****************************************************
  * Pilot Scenarios Study (interleaved image + audio)
  * PRESENTATION TWEAKS:
@@ -7,13 +6,15 @@
  * - Announcement screen before each scenario
  * - 1s fixation (+) between every candidate
  * - Audio pages: gray bio + note that bio matches audio; name stays black
+ * - Scenario paragraph slightly grey on candidate pages
  * - Candidate pages tightened; minimal scrolling
  *
  * CORE LOGIC:
  * - Each candidate shown on its own page
  * - IMAGES: candidate↔face index randomized per scenario (1..3)
  * - AUDIO: FIXED voice index by scenario+candidate (A:1..3, B:4..6)
- * - Image & audio VARIANT/PITCH RANDOMIZED PER CANDIDATE (1..3)
+ * - NEW: For EACH SCENARIO, variants 1, 2, and 3 are each used exactly once
+ *        across the three candidates (random assignment)
  * - Each participant sees all FOUR scenarios:
  *      • One CEO + One ECE as IMAGES
  *      • The other CEO + ECE as AUDIOS
@@ -52,6 +53,7 @@ function audioPath(gender, voiceIndex, variant){
 function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
 function sampleOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 function ordinalWord(n){ return (['first','second','third','fourth'][n-1]) || `${n}th`; }
+// randVariant() no longer used for assignment, but kept in case you need it elsewhere
 function randVariant(){ return Math.floor(Math.random()*3)+1; } // 1..3
 
 /* ---------- COMPACT CSS (only on candidate pages) ---------- */
@@ -136,16 +138,20 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
   let bios = BIOS[scenario.id].map(b => ({...b}));
   if (RANDOMIZE_DISPLAY_ORDER) bios = shuffle(bios);
 
-  // mapping used only for IMAGES
+  // mapping used only for IMAGES (which face index)
   const candToIdxImage = assignIndicesToCandidates(bios);
 
-  const trials = bios.map((cand) => {
-    const idx = (modality === 'image')
-      ? candToIdxImage[cand.id]
-      : audioIndexFor(scenario.id, cand.id);
+  // --- NEW: variants pool so each scenario uses 1, 2, 3 exactly once ---
+  // We shuffle [1,2,3] and assign in order of the bios array
+  const variantPool = shuffle([1, 2, 3]); // e.g., [2,1,3]
 
-    // Random variant (1..3) per trial
-    const useVariant = randVariant();
+  const trials = bios.map((cand, idxInScenario) => {
+    const idx = (modality === 'image')
+      ? candToIdxImage[cand.id]   // 1..3 face index
+      : audioIndexFor(scenario.id, cand.id); // voice index
+
+    // Take variant from variantPool so each scenario has v1, v2, v3 once
+    const useVariant = variantPool[idxInScenario]; // 0→first variant, etc.
 
     // unique id for audio DOM hooks (for gating)
     const audioId = `aud_${scenario.id}_${cand.id}_${Date.now()}_${Math.floor(Math.random()*1e6)}`;
@@ -176,10 +182,9 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
          </p>`
       : ``;
 
-    /* New styles:
-       - Scenario paragraph slightly greyed on ALL candidate pages
-       - On AUDIO pages: candidate NAME black, BIO grey; on IMAGE pages both black
-    */
+    // New styles:
+    // - Scenario paragraph slightly greyed on ALL candidate pages
+    // - On AUDIO pages: candidate NAME black, BIO grey; on IMAGE pages both black
     const scenarioTextStyle = 'color: rgba(0,0,0,0.70);';  // subtle grey
     const isAudio = modality === 'audio';
     const nameStyle = isAudio ? 'color:#000;' : '';           // force black name on audio pages
@@ -317,30 +322,30 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
 
   // Preface
   const preface = {
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: `
-    <div style="
-      height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:0 24px;
-      box-sizing:border-box;
-    ">
-      <div style="max-width:900px; text-align:center;">
-        <h3 style="margin:0 0 16px 0; font-size:30px;"><b>${scenario.title}</b></h3>
-        <p style="margin:10px 0 24px 0; font-size:20px; line-height:1.5; color:rgba(0,0,0,0.85);">
-          ${scenario.text}
-        </p>
-        <p style="font-size:18px; margin-top:24px;">
-          Press <b>SPACE</b> to continue.
-        </p>
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+      <div style="
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:0 24px;
+        box-sizing:border-box;
+      ">
+        <div style="max-width:900px; text-align:center;">
+          <h3 style="margin:0 0 16px 0; font-size:30px;"><b>${scenario.title}</b></h3>
+          <p style="margin:10px 0 24px 0; font-size:20px; line-height:1.5; color:rgba(0,0,0,0.85);">
+            ${scenario.text}
+          </p>
+          <p style="font-size:18px; margin-top:24px;">
+            Press <b>SPACE</b> to continue.
+          </p>
+        </div>
       </div>
-    </div>
-  `,
-  choices: [' '],
-  data:{ trial_type:'preface', scenario_id:scenario.id, scenario_kind:isCEO?'CEO':'ECE', modality }
-};
+    `,
+    choices: [' '],
+    data:{ trial_type:'preface', scenario_id:scenario.id, scenario_kind:isCEO?'CEO':'ECE', modality }
+  };
 
   // Announcement
   const announce = {
@@ -355,7 +360,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         text-align:center;
       ">
         <p style="font-size:32px; margin:0 0 12px 0;">
-          <b>You will now be presented with the ${ordinalWord(scenarioNumber)} company scenario<b>.
+          <b>You will now be presented with the ${ordinalWord(scenarioNumber)} company scenario.</b>
         </p>
         <p style="font-size:22px; margin:0;">
           Press <b>SPACE</b> to see the scenario.
@@ -476,7 +481,7 @@ timeline.push({
       ">
         <p><b>Researchers:</b><br>
         Eshnaa Aujla, graduate student (eshnaa15@yorku.ca)<br>
-        Shreya Sharma, graduate student (ssharm29@yorku.ca)<br>
+        Shreya Sharma, graduate student (ssharm29@york.ca)<br>
         Supervisor: Vinod Goel, vgoel@yorku.ca</p>
 
         <p>We invite you to take part in this research study. Please read this document and discuss any questions or concerns that you may have with the Investigator.</p>
@@ -574,7 +579,7 @@ timeline.push({
   stimulus: `
     <div style="text-align:center; max-width:900px; margin:48px auto;">
       <h2><b>Welcome to the experiment</b></h2>
-      <p>Imagine you are a recruiter at NorthStar Talent Collective. NorthStar helps in the identification and recruitment of employees ranging from CEOs to school teachers. You are in charge of reviewing candidate profiles for four several different portfolios.</p>
+      <p>Imagine you are a recruiter at NorthStar Talent Collective. NorthStar helps in the identification and recruitment of employees ranging from CEOs to school teachers. You are in charge of reviewing candidate profiles for several different portfolios.</p>
       <p>Two companies are looking to hire a new <b>Chief Executive Officer (CEO)</b> and two companies are looking to hire a new <b>Early Childhood Educator (ECE)</b>.</p>
       <p>You will be presented with information about each company including the qualifications they are looking for in a new employee, and the profiles of three candidates applying for each position.</p>
       <p>Your job is to evaluate each candidate and indicate how likely you would be to recommend them for the position considering the companies’ requirements.</p>
@@ -585,7 +590,7 @@ timeline.push({
   choices:[' ']
 });
 
-// --- DEMOGRAPHICS (age, gender, education, ethnicity, sexuality, employment, religion) ---
+// --- DEMOGRAPHICS ---
 timeline.push({
   type: jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -605,6 +610,9 @@ timeline.push({
           <option value="" disabled selected>-- Please select --</option>
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
+          <option value="Non-binary / gender diverse">Non-binary / gender diverse</option>
+          <option value="Another gender">Another gender</option>
+          <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
@@ -623,6 +631,20 @@ timeline.push({
           <option value="Latinx">Latinx</option>
           <option value="Mixed / Multiple">Mixed / Multiple</option>
           <option value="Another ethnicity">Another ethnicity</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+      </p>
+
+      <p>
+        <label for="demo_orientation"><b>4. How would you describe your sexual orientation?</b></label><br>
+        <select name="orientation" id="demo_orientation"
+                style="width:320px; padding:4px; margin-top:4px;">
+          <option value="" disabled selected>-- Please select --</option>
+          <option value="Heterosexual / straight">Heterosexual / straight</option>
+          <option value="Gay / Lesbian">Gay / Lesbian</option>
+          <option value="Bisexual / Pansexual">Bisexual / Pansexual</option>
+          <option value="Asexual">Asexual</option>
+          <option value="Another orientation">Another orientation</option>
           <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
@@ -701,7 +723,6 @@ timeline.push({
       const religion     = religionEl ? religionEl.value : "";
       const education    = eduEl ? eduEl.value : "";
 
-      // Simple "all required" check
       if (!age || !gender || !ethnicity || !orientation || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
@@ -719,7 +740,6 @@ timeline.push({
         education
       };
 
-      // Save demographics to Firebase in one node
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
         age,
         gender,
@@ -736,7 +756,6 @@ timeline.push({
   }
 });
 
-
 // Instructions
 timeline.push({
   type:jsPsychInstructions,
@@ -746,7 +765,7 @@ timeline.push({
        <p>You will now be presented with <b>four different scenarios</b> of companies looking to hire an employee, with certain qualifications. Alongside each hiring scenario, three job applicants will be presented. Each applicant's profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their qualifications.</p>
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
        <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend</b> and <b>7</b> being <b>very likely to recommend</b>.</p>
-       <p>Images or audios are assigned per scenario, and the visual/audio <b>variant</b> is randomized for each candidate.</p>
+       <p>Images or audios are assigned per scenario, and within each scenario the visual/audio <b>variants 1, 2, and 3</b> are each used exactly once across the three candidates.</p>
        <p>Please press <b>NEXT</b> to proceed.</p>
      </div>`
   ],
