@@ -610,9 +610,6 @@ timeline.push({
           <option value="" disabled selected>-- Please select --</option>
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
-          <option value="Non-binary / gender diverse">Non-binary / gender diverse</option>
-          <option value="Another gender">Another gender</option>
-          <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
@@ -631,20 +628,6 @@ timeline.push({
           <option value="Latinx">Latinx</option>
           <option value="Mixed / Multiple">Mixed / Multiple</option>
           <option value="Another ethnicity">Another ethnicity</option>
-          <option value="Prefer not to say">Prefer not to say</option>
-        </select>
-      </p>
-
-      <p>
-        <label for="demo_orientation"><b>4. How would you describe your sexual orientation?</b></label><br>
-        <select name="orientation" id="demo_orientation"
-                style="width:320px; padding:4px; margin-top:4px;">
-          <option value="" disabled selected>-- Please select --</option>
-          <option value="Heterosexual / straight">Heterosexual / straight</option>
-          <option value="Gay / Lesbian">Gay / Lesbian</option>
-          <option value="Bisexual / Pansexual">Bisexual / Pansexual</option>
-          <option value="Asexual">Asexual</option>
-          <option value="Another orientation">Another orientation</option>
           <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
