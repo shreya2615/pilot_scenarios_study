@@ -690,23 +690,22 @@ timeline.push({
     if (!btn) return;
 
     btn.addEventListener('click', () => {
-      const ageEl        = document.getElementById('demo_age');
-      const genderEl     = document.getElementById('demo_gender');
-      const ethEl        = document.getElementById('demo_ethnicity');
-      const orientEl     = document.getElementById('demo_orientation');
-      const empEl        = document.getElementById('demo_employment');
-      const religionEl   = document.getElementById('demo_religion');
-      const eduEl        = document.getElementById('demo_edu');
+      const ageEl      = document.getElementById('demo_age');
+      const genderEl   = document.getElementById('demo_gender');
+      const ethEl      = document.getElementById('demo_ethnicity');
+      const empEl      = document.getElementById('demo_employment');
+      const religionEl = document.getElementById('demo_religion');
+      const eduEl      = document.getElementById('demo_edu');
 
-      const age          = ageEl ? String(ageEl.value).trim() : "";
-      const gender       = genderEl ? genderEl.value : "";
-      const ethnicity    = ethEl ? ethEl.value : "";
-      const orientation  = orientEl ? orientEl.value : "";
-      const employment   = empEl ? empEl.value : "";
-      const religion     = religionEl ? religionEl.value : "";
-      const education    = eduEl ? eduEl.value : "";
+      const age        = ageEl ? String(ageEl.value).trim() : "";
+      const gender     = genderEl ? genderEl.value : "";
+      const ethnicity  = ethEl ? ethEl.value : "";
+      const employment = empEl ? empEl.value : "";
+      const religion   = religionEl ? religionEl.value : "";
+      const education  = eduEl ? eduEl.value : "";
 
-      if (!age || !gender || !ethnicity || !orientation || !employment || !religion || !education) {
+      // orientation removed from required check
+      if (!age || !gender || !ethnicity || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
       }
@@ -717,17 +716,16 @@ timeline.push({
         age,
         gender,
         ethnicity,
-        orientation,
         employment,
         religion,
         education
       };
 
+      // Firebase save (orientation removed here too)
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
         age,
         gender,
         ethnicity,
-        orientation,
         employment,
         religion,
         education,
