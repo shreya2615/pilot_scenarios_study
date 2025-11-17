@@ -355,7 +355,7 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         text-align:center;
       ">
         <p style="font-size:32px; margin:0 0 12px 0;">
-          <b>You will now be presented with the ${ordinalWord(scenarioNumber)} scenario<b>.
+          <b>You will now be presented with the ${ordinalWord(scenarioNumber)} company scenario<b>.
         </p>
         <p style="font-size:22px; margin:0;">
           Press <b>SPACE</b> to see the scenario.
@@ -574,7 +574,7 @@ timeline.push({
   stimulus: `
     <div style="text-align:center; max-width:900px; margin:48px auto;">
       <h2><b>Welcome to the experiment</b></h2>
-      <p>Imagine you are a recruiter at NorthStar Talent Collective. You are in charge of reviewing candidate profiles for four different companies looking to hire an employee.</p>
+      <p>Imagine you are a recruiter at NorthStar Talent Collective. NorthStar helps in the identification and recruitment of employees ranging from CEOs to school teachers. You are in charge of reviewing candidate profiles for four several different portfolios.</p>
       <p>Two companies are looking to hire a new <b>Chief Executive Officer (CEO)</b> and two companies are looking to hire a new <b>Early Childhood Educator (ECE)</b>.</p>
       <p>You will be presented with information about each company including the qualifications they are looking for in a new employee, and the profiles of three candidates applying for each position.</p>
       <p>Your job is to evaluate each candidate and indicate how likely you would be to recommend them for the position considering the companies’ requirements.</p>
@@ -605,9 +605,6 @@ timeline.push({
           <option value="" disabled selected>-- Please select --</option>
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
-          <option value="Non-binary">Non-binary</option>
-          <option value="Another identity">Another identity</option>
-          <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
@@ -626,21 +623,6 @@ timeline.push({
           <option value="Latinx">Latinx</option>
           <option value="Mixed / Multiple">Mixed / Multiple</option>
           <option value="Another ethnicity">Another ethnicity</option>
-          <option value="Prefer not to say">Prefer not to say</option>
-        </select>
-      </p>
-
-      <p>
-        <label for="demo_orientation"><b>4. How would you describe your sexual orientation?</b></label><br>
-        <select name="orientation" id="demo_orientation"
-                style="width:320px; padding:4px; margin-top:4px;">
-          <option value="" disabled selected>-- Please select --</option>
-          <option value="Heterosexual / straight">Heterosexual / straight</option>
-          <option value="Gay / lesbian">Gay / lesbian</option>
-          <option value="Bisexual">Bisexual</option>
-          <option value="Pansexual">Pansexual</option>
-          <option value="Asexual">Asexual</option>
-          <option value="Another orientation">Another orientation</option>
           <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
@@ -761,7 +743,7 @@ timeline.push({
   pages:[
     `<div style="text-align:center; max-width:900px; margin:48px auto;">
        <h3><b>Instructions</b></h3>
-       <p>You will see <b>four different scenarios</b> of companies looking to hire an employee, each with certain qualifications they are looking for. Alongside each hiring scenario, three job applicants will be presented. Each applicant’s profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their application.</p>
+       <p>You will now be presented with <b>four different scenarios</b> of companies looking to hire an employee, with certain qualifications. Alongside each hiring scenario, three job applicants will be presented. Each applicant's profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their qualifications.</p>
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
        <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend</b> and <b>7</b> being <b>very likely to recommend</b>.</p>
        <p>Images or audios are assigned per scenario, and the visual/audio <b>variant</b> is randomized for each candidate.</p>
