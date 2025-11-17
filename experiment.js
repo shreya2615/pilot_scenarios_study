@@ -488,11 +488,11 @@ timeline.push({
 
         <p><b>Purpose of the Research:</b> This project investigates the cognitive structures and processes underlying human reasoning & problem-solving abilities. The tasks vary between conditions but all involve attending to linguistic or visual stimuli and making a perceptual or cognitive judgment, usually on a computer screen.</p>
 
-        <p><b>What You Will Be Asked to Do:</b> You will be asked to complete a self questionnaire. After viewing images or audios, you will be asked for your opinions.</p>
+        <p><b>What You Will Be Asked to Do:</b> You will be asked to complete a self questionnaire. After viewing images or audios, you will be asked to make certain judgements.</p>
 
         <p><b>Risks and Discomforts:</b> We do not foresee any risks or discomfort from your participation in the research. You may, however, experience some frustration or stress if you believe that you are not doing well. Certain participants may have difficulty with some of the tasks. If you do feel discomfort you may withdraw at any time.</p>
 
-        <p><b>Benefits:</b> There is no direct benefit to you, but knowledge may be gained that may help others in the future. The study takes approximately 35–45 minutes to complete, and you will receive $7.50 USD upon completion. Compensation is available even if participants withdraw.</p>
+        <p><b>Benefits:</b> There is no direct benefit to you, but knowledge may be gained that may help others in the future. The study takes approximately 20 minutes to complete, and you will receive $5.00 USD for your participation.</p>
 
         <p><b>Voluntary Participation:</b> Your participation is entirely voluntary and you may choose to stop participating at any time. Your decision will not affect your relationship with the researcher, study staff, or York University.</p>
 
