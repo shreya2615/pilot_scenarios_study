@@ -496,7 +496,7 @@ timeline.push({
 
         <p><b>Voluntary Participation:</b> Your participation is entirely voluntary and you may choose to stop participating at any time. Your decision will not affect your relationship with the researcher, study staff, or York University.</p>
 
-        <p><b>Withdrawal:</b> You may withdraw at any time, and still receive compensation. If you withdraw, all associated data will be destroyed immediately.</p>
+        <p><b>Withdrawal:</b> You may withdraw at any time. If you withdraw, all associated data will be destroyed immediately.</p>
 
         <p><b>Secondary Use of Data:</b> De-identified data may be used in later related studies by the research team, but only in anonymous form and only following ethics review.</p>
 
@@ -746,7 +746,7 @@ timeline.push({
        <p>You will now be presented with <b>four different scenarios</b> of companies looking to hire an employee, with certain qualifications. Alongside each hiring scenario, three job applicants will be presented. Each applicant's profile will either be paired with an <b>image</b> of the applicant or an <b>audio recording</b> of their qualifications.</p>
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
        <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend</b> and <b>7</b> being <b>very likely to recommend</b>.</p>
-       <p>Images or audios are assigned per scenario, and within each scenario the visual/audio <b>variants 1, 2, and 3</b> are each used exactly once across the three candidates.</p>
+       <p>Images or audios are assigned per scenario at random.</p>
        <p>Please press <b>NEXT</b> to proceed.</p>
      </div>`
   ],
