@@ -751,6 +751,7 @@ timeline.push({
        <p>Please pay close attention to the information provided for each candidate as you will need it to make your evaluations.</p>
        <p>For each scenario, rate <b>all three candidates</b> on a scale of 1 to 7, with <b>1</b> being <b>not at all likely to recommend</b> and <b>7</b> being <b>very likely to recommend</b>.</p>
        <p>Images or audios are assigned per scenario at random.</p>
+       <p>The experiment may take a few minutes to load, please make sure you have a stable internet connection.</p>
        <p>Please press <b>NEXT</b> to proceed.</p>
      </div>`
   ],
