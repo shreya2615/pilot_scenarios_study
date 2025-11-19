@@ -614,6 +614,9 @@ timeline.push({
           <option value="" disabled selected>-- Please select --</option>
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
+          <option value="Non-binary / gender diverse">Non-binary / gender diverse</option>
+          <option value="Another gender">Another gender</option>
+          <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
@@ -637,7 +640,7 @@ timeline.push({
       </p>
 
       <p>
-        <label for="demo_employment"><b>5. What is your current employment status?</b></label><br>
+        <label for="demo_employment"><b>4. What is your current employment status?</b></label><br>
         <select name="employment" id="demo_employment"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -653,7 +656,7 @@ timeline.push({
       </p>
 
       <p>
-        <label for="demo_religion"><b>6. What is your current religious or spiritual affiliation?</b></label><br>
+        <label for="demo_religion"><b>5. What is your current religious or spiritual affiliation?</b></label><br>
         <select name="religion" id="demo_religion"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -670,7 +673,7 @@ timeline.push({
       </p>
 
       <p>
-        <label for="demo_edu"><b>7. What is your highest level of education completed?</b></label><br>
+        <label for="demo_edu"><b>6. What is your highest level of education completed?</b></label><br>
         <select name="education" id="demo_edu"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -708,12 +711,12 @@ timeline.push({
       const religion   = religionEl ? religionEl.value : "";
       const education  = eduEl ? eduEl.value : "";
 
-      // orientation removed from required check
       if (!age || !gender || !ethnicity || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
       }
 
+      // Save into jsPsych data
       const demoData = {
         trial_type: 'demographics',
         participant_id: PARTICIPANT_ID,
@@ -725,16 +728,25 @@ timeline.push({
         education
       };
 
-      // Firebase save (orientation removed here too)
-      db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
+      // Also add to row_expanded so it goes into Firebase with the rest
+      demoData.row_expanded = [{
+        participant_id: PARTICIPANT_ID,
+        scenario_id: 'demographics',
+        scenario_kind: 'NA',
+        phase: 'demographics',
+        candidate_id: 'NA',
+        variant: null,
+        rating: null,
+        face_file: '',
+        audio_file: '',
+        modality: 'NA',
         age,
         gender,
         ethnicity,
         employment,
         religion,
-        education,
-        timestamp: new Date().toISOString()
-      });
+        education
+      }];
 
       jsPsych.finishTrial(demoData);
     });
