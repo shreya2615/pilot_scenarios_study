@@ -594,7 +594,7 @@ timeline.push({
   choices:[' ']
 });
 
-// --- DEMOGRAPHICS (age, gender, education, ethnicity, sexuality, employment, religion) ---
+// --- DEMOGRAPHICS (age, gender, ethnicity, employment, religion, education) ---
 timeline.push({
   type: jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -614,6 +614,9 @@ timeline.push({
           <option value="" disabled selected>-- Please select --</option>
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
+          <option value="Non-binary / gender diverse">Non-binary / gender diverse</option>
+          <option value="Another gender identity">Another gender identity</option>
+          <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
@@ -637,7 +640,7 @@ timeline.push({
       </p>
 
       <p>
-        <label for="demo_employment"><b>5. What is your current employment status?</b></label><br>
+        <label for="demo_employment"><b>4. What is your current employment status?</b></label><br>
         <select name="employment" id="demo_employment"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -653,7 +656,7 @@ timeline.push({
       </p>
 
       <p>
-        <label for="demo_religion"><b>6. What is your current religious or spiritual affiliation?</b></label><br>
+        <label for="demo_religion"><b>5. What is your current religious or spiritual affiliation?</b></label><br>
         <select name="religion" id="demo_religion"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -670,7 +673,7 @@ timeline.push({
       </p>
 
       <p>
-        <label for="demo_edu"><b>7. What is your highest level of education completed?</b></label><br>
+        <label for="demo_edu"><b>6. What is your highest level of education completed?</b></label><br>
         <select name="education" id="demo_edu"
                 style="width:320px; padding:4px; margin-top:4px;">
           <option value="" disabled selected>-- Please select --</option>
@@ -694,31 +697,38 @@ timeline.push({
     if (!btn) return;
 
     btn.addEventListener('click', () => {
-      const ageEl        = document.getElementById('demo_age');
-      const genderEl     = document.getElementById('demo_gender');
-      const ethEl        = document.getElementById('demo_ethnicity');
-      const orientEl     = document.getElementById('demo_orientation');
-      const empEl        = document.getElementById('demo_employment');
-      const religionEl   = document.getElementById('demo_religion');
-      const eduEl        = document.getElementById('demo_edu');
+      const ageEl      = document.getElementById('demo_age');
+      const genderEl   = document.getElementById('demo_gender');
+      const ethEl      = document.getElementById('demo_ethnicity');
+      const empEl      = document.getElementById('demo_employment');
+      const religionEl = document.getElementById('demo_religion');
+      const eduEl      = document.getElementById('demo_edu');
 
-      const age          = ageEl ? String(ageEl.value).trim() : "";
-      const gender       = genderEl ? genderEl.value : "";
-      const ethnicity    = ethEl ? ethEl.value : "";
-      const orientation  = orientEl ? orientEl.value : "";
-      const employment   = empEl ? empEl.value : "";
-      const religion     = religionEl ? religionEl.value : "";
-      const education    = eduEl ? eduEl.value : "";
+      const age        = ageEl ? String(ageEl.value).trim() : "";
+      const gender     = genderEl ? genderEl.value : "";
+      const ethnicity  = ethEl ? ethEl.value : "";
+      const employment = empEl ? empEl.value : "";
+      const religion   = religionEl ? religionEl.value : "";
+      const education  = eduEl ? eduEl.value : "";
 
-      // Simple "all required" check
+      // Required check (no orientation anymore)
       if (!age || !gender || !ethnicity || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
       }
 
-      const demoData = {
-        trial_type: 'demographics',
+      // Row for jsPsych → on_finish → Firebase batch
+      const demoRow = {
         participant_id: PARTICIPANT_ID,
+        scenario_id: 'DEMOGRAPHICS',
+        scenario_kind: 'NA',
+        phase: 'demographics',
+        candidate_id: 'NA',
+        variant: null,
+        rating: null,
+        face_file: '',
+        audio_file: '',
+        modality: 'NA',
         age,
         gender,
         ethnicity,
@@ -727,7 +737,7 @@ timeline.push({
         education
       };
 
-      // Save demographics to Firebase in one node
+      // ALSO write a dedicated demographics node under this participant
       db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
         age,
         gender,
@@ -738,7 +748,18 @@ timeline.push({
         timestamp: new Date().toISOString()
       });
 
-      jsPsych.finishTrial(demoData);
+      // Finish trial with row_expanded so on_finish picks it up
+      jsPsych.finishTrial({
+        trial_type: 'demographics',
+        participant_id: PARTICIPANT_ID,
+        age,
+        gender,
+        ethnicity,
+        employment,
+        religion,
+        education,
+        row_expanded: [demoRow]
+      });
     });
   }
 });
