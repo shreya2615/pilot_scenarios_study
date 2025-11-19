@@ -468,7 +468,7 @@ const jsPsych = initJsPsych({
         document.body.innerHTML = `
           <div style="text-align:center; max-width:900px; margin:48px auto;">
             <h2>All done!</h2>
-            <p>Your responses could not be uploaded automatically, so they will download locally.</p>
+            <p>Your responses could not be uploaded automatically, so they will download locally. If this has happened please email shreya.sharma2615@gmail.com.</p>
           </div>
         `;
         jsPsych.data.get().localSave('csv', 'backup_' + PARTICIPANT_ID + '.csv');
@@ -638,9 +638,6 @@ timeline.push({
           <option value="" disabled selected>-- Please select --</option>
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
-          <option value="Non-binary / gender diverse">Non-binary / gender diverse</option>
-          <option value="Prefer to self-describe">Prefer to self-describe</option>
-          <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
 
