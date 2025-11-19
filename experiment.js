@@ -402,11 +402,14 @@ const jsPsych = initJsPsych({
   on_finish: async () => {
     const flat = [];
     jsPsych.data.get().values().forEach(tr => {
-      if (Array.isArray(tr.row_expanded)) tr.row_expanded.forEach(r => flat.push(r));
+      if (Array.isArray(tr.row_expanded)) {
+        tr.row_expanded.forEach(r => flat.push(r));
+      }
     });
 
     try {
       if (flat.length === 0) {
+        // No per-trial rows? still record a minimal completion marker
         await db.ref('pilot_scenarios/' + PARTICIPANT_ID).set({
           participant_id: PARTICIPANT_ID,
           completed: true,
@@ -417,17 +420,25 @@ const jsPsych = initJsPsych({
         flat.forEach((r) => {
           const key = db.ref().child('pilot_scenarios').child(PARTICIPANT_ID).push().key;
           updates[`pilot_scenarios/${PARTICIPANT_ID}/${key}`] = {
-            participant_id: r.participant_id,
-            scenario_id: r.scenario_id,
-            scenario_kind: r.scenario_kind,
-            phase: r.phase,
-            candidate_id: r.candidate_id,
-            variant: r.variant,
-            rating: r.rating,
+            participant_id: r.participant_id || PARTICIPANT_ID,
+            scenario_id: r.scenario_id || '',
+            scenario_kind: r.scenario_kind || '',
+            phase: r.phase || '',
+            candidate_id: r.candidate_id || '',
+            variant: (typeof r.variant === 'undefined') ? '' : r.variant,
+            rating: (typeof r.rating === 'undefined') ? null : r.rating,
             face_file: r.face_file || '',
             audio_file: r.audio_file || '',
             modality: r.modality || '',
-            rt: (typeof r.rt === 'number') ? r.rt : null,
+            // Demographics (will be filled only for the demographics row)
+            age: r.age || '',
+            gender: r.gender || '',
+            ethnicity: r.ethnicity || '',
+            employment: r.employment || '',
+            religion: r.religion || '',
+            education: r.education || '',
+            // RT if you added it to row_expanded elsewhere
+            rt: (typeof r.rt === 'undefined') ? null : r.rt,
             timestamp: new Date().toISOString()
           };
         });
@@ -594,7 +605,7 @@ timeline.push({
   choices:[' ']
 });
 
-// --- DEMOGRAPHICS (age, gender, ethnicity, employment, religion, education) ---
+// // --- DEMOGRAPHICS ---
 timeline.push({
   type: jsPsychHtmlKeyboardResponse,
   stimulus: `
@@ -615,7 +626,7 @@ timeline.push({
           <option value="Man">Man</option>
           <option value="Woman">Woman</option>
           <option value="Non-binary / gender diverse">Non-binary / gender diverse</option>
-          <option value="Another gender identity">Another gender identity</option>
+          <option value="Prefer to self-describe">Prefer to self-describe</option>
           <option value="Prefer not to say">Prefer not to say</option>
         </select>
       </p>
@@ -711,24 +722,15 @@ timeline.push({
       const religion   = religionEl ? religionEl.value : "";
       const education  = eduEl ? eduEl.value : "";
 
-      // Required check (no orientation anymore)
       if (!age || !gender || !ethnicity || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
       }
 
-      // Row for jsPsych → on_finish → Firebase batch
+      // Put demographics into row_expanded so on_finish will send it to Firebase
       const demoRow = {
         participant_id: PARTICIPANT_ID,
-        scenario_id: 'DEMOGRAPHICS',
-        scenario_kind: 'NA',
         phase: 'demographics',
-        candidate_id: 'NA',
-        variant: null,
-        rating: null,
-        face_file: '',
-        audio_file: '',
-        modality: 'NA',
         age,
         gender,
         ethnicity,
@@ -737,18 +739,6 @@ timeline.push({
         education
       };
 
-      // ALSO write a dedicated demographics node under this participant
-      db.ref(`pilot_scenarios/${PARTICIPANT_ID}/demographics`).set({
-        age,
-        gender,
-        ethnicity,
-        employment,
-        religion,
-        education,
-        timestamp: new Date().toISOString()
-      });
-
-      // Finish trial with row_expanded so on_finish picks it up
       jsPsych.finishTrial({
         trial_type: 'demographics',
         participant_id: PARTICIPANT_ID,
