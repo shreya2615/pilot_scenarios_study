@@ -277,13 +277,15 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
         variant_used: useVariant
       },
       on_finish: (data) => {
-        document.body.classList.remove('compact-trial');
+  document.body.classList.remove('compact-trial');
 
         const resp = (data.response && typeof data.response === 'object')
           ? data.response
           : (data.responses ? JSON.parse(data.responses) : {});
         const key = Object.keys(resp)[0];
         const rating = Number(resp[key]) + 1;
+
+        const rt = data.rt;
 
         data.row_expanded = [{
           participant_id: PARTICIPANT_ID,
@@ -295,7 +297,8 @@ function buildCandidateTrials(scenario, modality, scenarioNumber) {
           rating,
           face_file: (modality === 'image') ? loggedFile : '',
           audio_file: (modality === 'audio') ? loggedFile : '',
-          modality
+          modality,
+          rt 
         }];
       }
     };
@@ -424,6 +427,7 @@ const jsPsych = initJsPsych({
             face_file: r.face_file || '',
             audio_file: r.audio_file || '',
             modality: r.modality || '',
+            rt: (typeof r.rt === 'number') ? r.rt : null,
             timestamp: new Date().toISOString()
           };
         });
