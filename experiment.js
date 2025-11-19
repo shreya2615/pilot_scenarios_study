@@ -397,9 +397,10 @@ document.body.style.color='black';
 document.body.style.fontFamily='Arial, sans-serif';
 
 const jsPsych = initJsPsych({
-  display_element:'jspsych-target',
-  override_safe_mode:true,
-  on_finish: async () => {
+  display_element: 'jspsych-target',
+  override_safe_mode: true,
+  on_finish: () => {
+    // Flatten all row_expanded entries (trials + demographics)
     const flat = [];
     jsPsych.data.get().values().forEach(tr => {
       if (Array.isArray(tr.row_expanded)) {
@@ -407,19 +408,20 @@ const jsPsych = initJsPsych({
       }
     });
 
-    try {
+    const participantRef = db.ref('pilot_scenarios').child(PARTICIPANT_ID);
+
+    function uploadAllRows() {
       if (flat.length === 0) {
-        // No per-trial rows? still record a minimal completion marker
-        await db.ref('pilot_scenarios/' + PARTICIPANT_ID).set({
+        // No per-trial rows? Still save a minimal completion marker
+        return participantRef.set({
           participant_id: PARTICIPANT_ID,
           completed: true,
           timestamp: new Date().toISOString()
         });
       } else {
-        const updates = {};
-        flat.forEach((r) => {
-          const key = db.ref().child('pilot_scenarios').child(PARTICIPANT_ID).push().key;
-          updates[`pilot_scenarios/${PARTICIPANT_ID}/${key}`] = {
+        // One push().set(...) per row
+        const writes = flat.map(r => {
+          const payload = {
             participant_id: r.participant_id || PARTICIPANT_ID,
             scenario_id: r.scenario_id || '',
             scenario_kind: r.scenario_kind || '',
@@ -430,39 +432,50 @@ const jsPsych = initJsPsych({
             face_file: r.face_file || '',
             audio_file: r.audio_file || '',
             modality: r.modality || '',
-            // Demographics (will be filled only for the demographics row)
+            // Demographics (only populated for the demographics row)
             age: r.age || '',
             gender: r.gender || '',
             ethnicity: r.ethnicity || '',
             employment: r.employment || '',
             religion: r.religion || '',
             education: r.education || '',
-            // RT if you added it to row_expanded elsewhere
+            // Reaction time (if present)
             rt: (typeof r.rt === 'undefined') ? null : r.rt,
             timestamp: new Date().toISOString()
           };
-        });
-        await db.ref().update(updates);
-      }
 
-      document.body.innerHTML = `
-        <div style="text-align:center; max-width:900px; margin:48px auto;">
-          <h2>All done!</h2>
-          <p>Your responses have been securely logged, you may now close this window.</p>
-        </div>
-      `;
-    } catch (err) {
-      console.error("Firebase upload failed:", err);
-      document.body.innerHTML = `
-        <div style="text-align:center; max-width:900px; margin:48px auto;">
-          <h2>All done!</h2>
-          <p>Your responses could not be uploaded automatically, so they will download locally.</p>
-        </div>
-      `;
-      jsPsych.data.get().localSave('csv', `backup_${PARTICIPANT_ID}.csv`);
+          return participantRef.push().set(payload);
+        });
+
+        return Promise.all(writes);
+      }
     }
+
+    uploadAllRows()
+      .then(() => {
+        // If we got here, Firebase write succeeded
+        document.body.innerHTML = `
+          <div style="text-align:center; max-width:900px; margin:48px auto;">
+            <h2>All done!</h2>
+            <p>Your responses have been securely logged, you may now close this window.</p>
+          </div>
+        `;
+      })
+      .catch(err => {
+        console.error('Firebase upload failed:', err);
+        alert('Firebase upload failed: ' + (err && err.message ? err.message : err));
+
+        document.body.innerHTML = `
+          <div style="text-align:center; max-width:900px; margin:48px auto;">
+            <h2>All done!</h2>
+            <p>Your responses could not be uploaded automatically, so they will download locally.</p>
+          </div>
+        `;
+        jsPsych.data.get().localSave('csv', 'backup_' + PARTICIPANT_ID + '.csv');
+      });
   }
 });
+
 
 /* ---------- Timeline ---------- */
 const timeline=[];
