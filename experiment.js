@@ -711,7 +711,7 @@ timeline.push({
       const education    = eduEl ? eduEl.value : "";
 
       // Simple "all required" check
-      if (!age || !gender || !ethnicity || !orientation || !employment || !religion || !education) {
+      if (!age || !gender || !ethnicity || !employment || !religion || !education) {
         alert("Please answer all questions before continuing.");
         return;
       }
@@ -722,7 +722,6 @@ timeline.push({
         age,
         gender,
         ethnicity,
-        orientation,
         employment,
         religion,
         education
@@ -733,7 +732,6 @@ timeline.push({
         age,
         gender,
         ethnicity,
-        orientation,
         employment,
         religion,
         education,
